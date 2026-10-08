@@ -88,6 +88,8 @@ return [
     */
 
     'uploads' => [
+        // Private disk for attachments. Use "s3" (or any private cloud disk) in production.
+        'disk' => env('ATTACHMENTS_DISK', 'local'),
         'max_file_kb' => 20 * 1024,
         'max_image_kb' => 2 * 1024,
         'allowed_extensions' => [

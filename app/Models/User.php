@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MembershipStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Appends;
@@ -16,7 +17,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
@@ -31,14 +31,14 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property array{email?: array<string, bool>}|null $notification_preferences
  * @property bool $is_platform_admin
  * @property string|null $last_organization_id
- * @property Carbon|null $email_verified_at
+ * @property CarbonImmutable|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
- * @property Carbon|null $two_factor_confirmed_at
+ * @property CarbonImmutable|null $two_factor_confirmed_at
  * @property string|null $remember_token
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read string|null $avatar
  * @property-read Collection<int, OrganizationMembership> $memberships
  */

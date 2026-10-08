@@ -7,6 +7,7 @@ use App\Enums\Industry;
 use App\Enums\MembershipStatus;
 use App\Enums\OrganizationStatus;
 use App\Enums\UseCase;
+use Carbon\CarbonImmutable;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -15,7 +16,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -37,9 +37,9 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $contact_phone
  * @property string|null $address
  * @property array<string, mixed>|null $settings
- * @property Carbon|null $onboarded_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $onboarded_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  */
 #[Fillable([
     'name', 'slug', 'owner_id', 'status', 'logo_path', 'website', 'industry', 'company_size',

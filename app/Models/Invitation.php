@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Role;
+use Carbon\CarbonImmutable;
 use Database\Factories\InvitationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * An invitation to join an organization. Only a hash of the token is stored;
@@ -24,11 +24,11 @@ use Illuminate\Support\Carbon;
  * @property string|null $department
  * @property string $token_hash
  * @property int|null $invited_by
- * @property Carbon $expires_at
- * @property Carbon|null $accepted_at
- * @property Carbon|null $revoked_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable $expires_at
+ * @property CarbonImmutable|null $accepted_at
+ * @property CarbonImmutable|null $revoked_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read Organization $organization
  */
 #[Fillable(['organization_id', 'email', 'role', 'department', 'token_hash', 'invited_by', 'expires_at', 'accepted_at', 'revoked_at'])]

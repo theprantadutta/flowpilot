@@ -98,8 +98,22 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Notice a dropped network connection within about a minute instead of
+            // waiting on a dead socket until PHP gives up.
+            'keepalives' => 1,
+            'keepalives_idle' => 30,
+            'keepalives_interval' => 10,
+            'keepalives_count' => 3,
+            'server_options' => [
+                // Stop any single query that runs away, in milliseconds.
+                'statement_timeout' => (int) env('DB_STATEMENT_TIMEOUT', 25000),
+            ],
             'options' => extension_loaded('pdo_pgsql') ? array_filter([
+                // Give up connecting after this many seconds.
+                PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 10),
                 // Reuse the connection between requests handled by the same PHP worker.
+                // Only on a reliable network: a silently dropped persistent connection
+                // is reused until the request times out.
                 PDO::ATTR_PERSISTENT => (bool) env('DB_PERSISTENT', false),
                 // Send each query in one round trip (still server-side parameter binding).
                 // Worth enabling when the database is far away or sits behind PgBouncer.

@@ -2,7 +2,11 @@
 
 namespace App\Support\Activity;
 
+use App\Enums\IssueSeverity;
+use App\Enums\IssueStatus;
+use App\Enums\ProjectStatus;
 use App\Enums\Role;
+use App\Enums\TaskStatus;
 use App\Models\ActivityLog;
 use Illuminate\Support\Str;
 
@@ -66,6 +70,47 @@ class ActivityPresenter
             'settings.updated' => 'updated the '.($this->string($properties, 'section') ?? 'organization').' settings',
             'settings.logo_updated' => 'uploaded a new logo',
             'settings.logo_removed' => 'removed the logo',
+            'project.created' => "created the project {$this->subjectName($log, $properties)}",
+            'project.updated' => "updated {$this->subjectName($log, $properties)}",
+            'project.status_changed' => sprintf(
+                'moved %s from %s to %s',
+                $this->subjectName($log, $properties),
+                $this->enumLabel(ProjectStatus::class, $changes['status']['from'] ?? null),
+                $this->enumLabel(ProjectStatus::class, $changes['status']['to'] ?? null),
+            ),
+            'project.deleted' => "deleted the project {$this->subjectName($log, $properties)}",
+            'task.created' => "created {$this->workItem($properties, $log)}",
+            'task.updated' => "updated {$this->workItem($properties, $log)}",
+            'task.completed' => "completed {$this->workItem($properties, $log)}",
+            'task.status_changed' => sprintf(
+                'moved %s to %s',
+                $this->workItem($properties, $log),
+                $this->enumLabel(TaskStatus::class, $changes['status']['to'] ?? null),
+            ),
+            'task.assigned' => "reassigned {$this->workItem($properties, $log)}",
+            'task.deleted' => "deleted {$this->workItem($properties, $log)}",
+            'task.commented' => "commented on {$this->workItem($properties, $log)}",
+            'task.checklist_completed' => "finished the checklist on {$this->workItem($properties, $log)}",
+            'task.dependency_added' => sprintf('marked %s as waiting on %s', $this->workItem($properties, $log), $this->string($properties, 'blocker') ?? 'another task'),
+            'task.dependency_removed' => sprintf('removed the dependency of %s on %s', $this->workItem($properties, $log), $this->string($properties, 'blocker') ?? 'another task'),
+            'issue.created' => "reported {$this->workItem($properties, $log)}",
+            'issue.updated' => "updated {$this->workItem($properties, $log)}",
+            'issue.resolved' => "resolved {$this->workItem($properties, $log)}",
+            'issue.status_changed' => sprintf(
+                'marked %s as %s',
+                $this->workItem($properties, $log),
+                $this->enumLabel(IssueStatus::class, $changes['status']['to'] ?? null),
+            ),
+            'issue.severity_changed' => sprintf(
+                'changed the severity of %s to %s',
+                $this->workItem($properties, $log),
+                $this->enumLabel(IssueSeverity::class, $changes['severity']['to'] ?? null),
+            ),
+            'issue.assigned' => "reassigned {$this->workItem($properties, $log)}",
+            'issue.deleted' => "deleted {$this->workItem($properties, $log)}",
+            'issue.commented' => "commented on {$this->workItem($properties, $log)}",
+            'file.uploaded' => sprintf('attached %s to %s', $this->string($properties, 'file') ?? 'a file', $this->string($properties, 'title') ?? 'a record'),
+            'file.deleted' => sprintf('removed %s from %s', $this->string($properties, 'file') ?? 'a file', $this->string($properties, 'title') ?? 'a record'),
             default => Str::of($log->action)->replace(['.', '_'], ' ')->lower()->toString(),
         };
     }
@@ -73,9 +118,9 @@ class ActivityPresenter
     private function tone(string $action): string
     {
         return match (true) {
-            str_ends_with($action, '.removed'), str_ends_with($action, '.suspended'),
+            str_ends_with($action, '.removed'), str_ends_with($action, '.suspended'), str_ends_with($action, '.deleted'),
             str_ends_with($action, '.failed'), str_ends_with($action, '.rejected') => 'danger',
-            str_ends_with($action, '.approved'), str_ends_with($action, '.completed'),
+            str_ends_with($action, '.approved'), str_ends_with($action, '.completed'), str_ends_with($action, '.resolved'),
             str_ends_with($action, '.joined'), $action === 'organization.created' => 'success',
             str_starts_with($action, 'workflow.') => 'flow',
             str_starts_with($action, 'ai.') => 'ai',
@@ -97,6 +142,7 @@ class ActivityPresenter
             'approval' => 'stamp',
             'inventory' => 'package',
             'ai' => 'sparkles',
+            'file' => 'paperclip',
             default => 'activity',
         };
     }
@@ -122,6 +168,35 @@ class ActivityPresenter
         }
 
         return $clean;
+    }
+
+    /**
+     * "T-42 Install conveyor sensors".
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    private function workItem(array $properties, ActivityLog $log): string
+    {
+        $reference = $this->string($properties, 'reference');
+        $title = $this->string($properties, 'title') ?? $log->subject_label ?? 'an item';
+
+        return $reference ? "{$reference} {$title}" : $title;
+    }
+
+    /**
+     * @param  array<string, mixed>  $properties
+     */
+    private function subjectName(ActivityLog $log, array $properties): string
+    {
+        return $this->string($properties, 'name') ?? $log->subject_label ?? 'a project';
+    }
+
+    /**
+     * @param  class-string<ProjectStatus|TaskStatus|IssueStatus|IssueSeverity>  $enum
+     */
+    private function enumLabel(string $enum, mixed $value): string
+    {
+        return is_string($value) ? ($enum::tryFrom($value)?->label() ?? $value) : 'another state';
     }
 
     private function roleLabel(?string $value): string

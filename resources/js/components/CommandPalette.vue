@@ -2,8 +2,13 @@
 import { router, usePage } from '@inertiajs/vue3';
 import type { LucideIcon } from '@lucide/vue';
 import {
+    Activity,
     ArrowLeftRight,
     Bell,
+    CircleAlert,
+    FolderKanban,
+    ListChecks,
+    Plus,
     CornerDownLeft,
     LayoutDashboard,
     Loader2,
@@ -39,10 +44,14 @@ import {
 } from '@/composables/useCommandPalette';
 import { useOrganization } from '@/composables/useOrganization';
 import { overview, search as searchRoute } from '@/routes';
+import { index as activityIndex } from '@/routes/activity';
+import { index as issuesIndex } from '@/routes/issues';
 import { index as membersIndex } from '@/routes/members';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { show as organizationSettings } from '@/routes/organization-settings';
 import { edit as profileEdit } from '@/routes/profile';
+import { index as projectsIndex } from '@/routes/projects';
+import { index as tasksIndex } from '@/routes/tasks';
 import type { Permission } from '@/types';
 
 type Command = {
@@ -92,6 +101,77 @@ const commands = computed<Command[]>(() => {
                 permission: 'dashboard.view',
                 keywords: 'home dashboard',
                 run: () => go(overview()),
+            },
+            {
+                id: 'go-projects',
+                group: 'Go to',
+                label: 'Projects',
+                icon: FolderKanban,
+                permission: 'projects.view',
+                run: () => go(projectsIndex()),
+            },
+            {
+                id: 'go-tasks',
+                group: 'Go to',
+                label: 'Tasks',
+                icon: ListChecks,
+                permission: 'tasks.view',
+                keywords: 'todo work board kanban',
+                run: () => go(tasksIndex()),
+            },
+            {
+                id: 'go-my-tasks',
+                group: 'Go to',
+                label: 'My tasks',
+                icon: ListChecks,
+                permission: 'tasks.view',
+                keywords: 'assigned to me',
+                run: () => go(tasksIndex({}, { query: { assignee: 'me' } })),
+            },
+            {
+                id: 'go-issues',
+                group: 'Go to',
+                label: 'Issues',
+                icon: CircleAlert,
+                permission: 'issues.view',
+                keywords: 'problems bugs',
+                run: () => go(issuesIndex()),
+            },
+            {
+                id: 'go-activity',
+                group: 'Go to',
+                label: 'Activity',
+                icon: Activity,
+                permission: 'dashboard.view',
+                keywords: 'history audit log',
+                run: () => go(activityIndex()),
+            },
+            {
+                id: 'create-project',
+                group: 'Actions',
+                label: 'Create project',
+                icon: Plus,
+                permission: 'projects.create',
+                keywords: 'new',
+                run: () => go(projectsIndex({}, { query: { create: 1 } })),
+            },
+            {
+                id: 'create-task',
+                group: 'Actions',
+                label: 'Create task',
+                icon: Plus,
+                permission: 'tasks.create',
+                keywords: 'new todo',
+                run: () => go(tasksIndex({}, { query: { create: 1 } })),
+            },
+            {
+                id: 'report-issue',
+                group: 'Actions',
+                label: 'Report an issue',
+                icon: Plus,
+                permission: 'issues.create',
+                keywords: 'new problem bug',
+                run: () => go(issuesIndex({}, { query: { create: 1 } })),
             },
             {
                 id: 'go-members',
@@ -423,8 +503,8 @@ const nothingFound = computed(
                             v-if="nothingFound"
                             class="px-3 py-10 text-center text-sm text-muted-foreground"
                         >
-                            Nothing matches “{{ query }}”. Try a person’s name
-                            or an email address.
+                            Nothing matches “{{ query }}”. Try a project name, a
+                            task number like T-12, or a person.
                         </p>
                     </ListboxContent>
                 </ListboxRoot>

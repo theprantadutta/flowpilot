@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { LayoutDashboard, Settings, Users } from '@lucide/vue';
+import {
+    Activity,
+    CircleAlert,
+    FolderKanban,
+    LayoutDashboard,
+    ListChecks,
+    Settings,
+    Users,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -21,8 +29,12 @@ import {
 } from '@/components/ui/sidebar';
 import { useOrganization } from '@/composables/useOrganization';
 import { dashboard, overview } from '@/routes';
+import { index as activity } from '@/routes/activity';
+import { index as issues } from '@/routes/issues';
 import { index as members } from '@/routes/members';
 import { show as organizationSettings } from '@/routes/organization-settings';
+import { index as projects } from '@/routes/projects';
+import { index as tasks } from '@/routes/tasks';
 import type { NavGroup } from '@/types';
 
 const page = usePage();
@@ -45,6 +57,38 @@ const groups = computed<NavGroup[]>(() => {
                     title: 'Overview',
                     href: overview(),
                     icon: LayoutDashboard,
+                    permission: 'dashboard.view',
+                },
+                {
+                    title: 'Projects',
+                    href: projects(),
+                    icon: FolderKanban,
+                    permission: 'projects.view',
+                    matchPrefix: true,
+                },
+                {
+                    title: 'Tasks',
+                    href: tasks(),
+                    icon: ListChecks,
+                    permission: 'tasks.view',
+                    matchPrefix: true,
+                },
+                {
+                    title: 'Issues',
+                    href: issues(),
+                    icon: CircleAlert,
+                    permission: 'issues.view',
+                    matchPrefix: true,
+                },
+            ],
+        },
+        {
+            title: 'Insight',
+            items: [
+                {
+                    title: 'Activity',
+                    href: activity(),
+                    icon: Activity,
                     permission: 'dashboard.view',
                 },
             ],

@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * An append-only record of something that happened: who did what to which
@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $properties
  * @property string|null $ip_address
  * @property string|null $user_agent
- * @property Carbon $created_at
+ * @property CarbonImmutable $created_at
  * @property-read User|null $actor
  */
 #[Fillable([

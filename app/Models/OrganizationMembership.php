@@ -5,13 +5,13 @@ namespace App\Models;
 use App\Enums\MembershipStatus;
 use App\Enums\Permission;
 use App\Enums\Role;
+use Carbon\CarbonImmutable;
 use Database\Factories\OrganizationMembershipFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * A user's place in one organization. Deliberately not auto-scoped to the
@@ -25,11 +25,11 @@ use Illuminate\Support\Carbon;
  * @property string|null $department
  * @property string|null $job_title
  * @property int|null $invited_by
- * @property Carbon|null $invited_at
- * @property Carbon|null $joined_at
- * @property Carbon|null $last_active_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $invited_at
+ * @property CarbonImmutable|null $joined_at
+ * @property CarbonImmutable|null $last_active_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read Organization $organization
  * @property-read User $user
  */

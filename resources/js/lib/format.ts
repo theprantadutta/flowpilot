@@ -83,6 +83,8 @@ export function formatMoney(
     return new Intl.NumberFormat(undefined, {
         style: 'currency',
         currency,
+        // $ rather than US$; the organization's currency is already known.
+        currencyDisplay: 'narrowSymbol',
         ...options,
     }).format(minorUnits / divisor);
 }

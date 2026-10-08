@@ -4,7 +4,10 @@ namespace App\Support\Search;
 
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Support\Search\Sources\IssueSearchSource;
 use App\Support\Search\Sources\MemberSearchSource;
+use App\Support\Search\Sources\ProjectSearchSource;
+use App\Support\Search\Sources\TaskSearchSource;
 
 /**
  * Searches every source the member is allowed to see.
@@ -15,6 +18,9 @@ class GlobalSearch
      * @var list<class-string<SearchSource>>
      */
     public const array SOURCES = [
+        ProjectSearchSource::class,
+        TaskSearchSource::class,
+        IssueSearchSource::class,
         MemberSearchSource::class,
     ];
 

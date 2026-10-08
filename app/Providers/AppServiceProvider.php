@@ -4,10 +4,16 @@ namespace App\Providers;
 
 use App\Enums\Permission;
 use App\Models\ActivityLog;
+use App\Models\Attachment;
+use App\Models\Comment;
 use App\Models\Invitation;
+use App\Models\Issue;
 use App\Models\Notification;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\Project;
+use App\Models\Task;
+use App\Models\TaskChecklistItem;
 use App\Models\User;
 use App\Notifications\Channels\TenantDatabaseChannel;
 use App\Support\Tenancy\Tenancy;
@@ -105,6 +111,12 @@ class AppServiceProvider extends ServiceProvider
             'invitation' => Invitation::class,
             'activity_log' => ActivityLog::class,
             'notification' => Notification::class,
+            'project' => Project::class,
+            'task' => Task::class,
+            'task_checklist_item' => TaskChecklistItem::class,
+            'issue' => Issue::class,
+            'comment' => Comment::class,
+            'attachment' => Attachment::class,
         ]);
     }
 
