@@ -14,6 +14,10 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TaskChecklistController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskDependencyController;
+use App\Http\Controllers\WebhookSecretController;
+use App\Http\Controllers\WorkflowController;
+use App\Http\Controllers\WorkflowDefinitionController;
+use App\Http\Controllers\WorkflowRunController;
 use App\Http\Requests\Organizations\UpdateOrganizationSettingsRequest;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +48,12 @@ Route::post('settings/logo', [OrganizationSettingsController::class, 'updateLogo
     ->middleware('throttle:10,1')
     ->name('organization-settings.logo.update');
 Route::delete('settings/logo', [OrganizationSettingsController::class, 'destroyLogo'])->name('organization-settings.logo.destroy');
+Route::get('settings/webhook-secret', [WebhookSecretController::class, 'show'])
+    ->middleware('throttle:10,1')
+    ->name('organization-settings.webhook-secret.show');
+Route::post('settings/webhook-secret', [WebhookSecretController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('organization-settings.webhook-secret.rotate');
 Route::get('settings/{section?}', [OrganizationSettingsController::class, 'show'])
     ->whereIn('section', UpdateOrganizationSettingsRequest::SECTIONS)
     ->name('organization-settings.show');
@@ -97,3 +107,31 @@ Route::post('issues/{issue}/attachments', [AttachmentController::class, 'storeFo
 Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download');
 Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
+
+Route::get('workflows', [WorkflowController::class, 'index'])->name('workflows.index');
+Route::post('workflows', [WorkflowController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('workflows.store');
+Route::get('workflows/{workflow}', [WorkflowController::class, 'show'])->name('workflows.show');
+Route::patch('workflows/{workflow}', [WorkflowController::class, 'update'])->name('workflows.update');
+Route::delete('workflows/{workflow}', [WorkflowController::class, 'destroy'])->name('workflows.destroy');
+Route::put('workflows/{workflow}/draft', [WorkflowDefinitionController::class, 'saveDraft'])
+    ->middleware('throttle:120,1')
+    ->name('workflows.draft.update');
+Route::post('workflows/{workflow}/publish', [WorkflowDefinitionController::class, 'publish'])
+    ->middleware('throttle:30,1')
+    ->name('workflows.publish');
+Route::patch('workflows/{workflow}/status', [WorkflowDefinitionController::class, 'updateStatus'])->name('workflows.status.update');
+Route::post('workflows/{workflow}/versions/{version}/restore', [WorkflowDefinitionController::class, 'restoreVersion'])
+    ->scopeBindings()
+    ->name('workflows.versions.restore');
+Route::post('workflows/{workflow}/runs', [WorkflowRunController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('workflows.runs.store');
+
+Route::get('runs', [WorkflowRunController::class, 'index'])->name('workflow-runs.index');
+Route::get('runs/{run}', [WorkflowRunController::class, 'show'])->name('workflow-runs.show');
+Route::post('runs/{run}/cancel', [WorkflowRunController::class, 'cancel'])->name('workflow-runs.cancel');
+Route::post('runs/{run}/retry', [WorkflowRunController::class, 'retry'])
+    ->middleware('throttle:30,1')
+    ->name('workflow-runs.retry');

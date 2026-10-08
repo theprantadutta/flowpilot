@@ -8,6 +8,7 @@ use App\Support\Search\Sources\IssueSearchSource;
 use App\Support\Search\Sources\MemberSearchSource;
 use App\Support\Search\Sources\ProjectSearchSource;
 use App\Support\Search\Sources\TaskSearchSource;
+use App\Support\Search\Sources\WorkflowSearchSource;
 
 /**
  * Searches every source the member is allowed to see.
@@ -21,6 +22,7 @@ class GlobalSearch
         ProjectSearchSource::class,
         TaskSearchSource::class,
         IssueSearchSource::class,
+        WorkflowSearchSource::class,
         MemberSearchSource::class,
     ];
 

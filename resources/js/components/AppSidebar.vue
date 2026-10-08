@@ -4,6 +4,7 @@ import {
     Activity,
     CircleAlert,
     FolderKanban,
+    GitBranch,
     LayoutDashboard,
     ListChecks,
     Settings,
@@ -35,6 +36,8 @@ import { index as members } from '@/routes/members';
 import { show as organizationSettings } from '@/routes/organization-settings';
 import { index as projects } from '@/routes/projects';
 import { index as tasks } from '@/routes/tasks';
+import { index as workflowRuns } from '@/routes/workflow-runs';
+import { index as workflows } from '@/routes/workflows';
 import type { NavGroup } from '@/types';
 
 const page = usePage();
@@ -79,6 +82,19 @@ const groups = computed<NavGroup[]>(() => {
                     icon: CircleAlert,
                     permission: 'issues.view',
                     matchPrefix: true,
+                },
+            ],
+        },
+        {
+            title: 'Automate',
+            items: [
+                {
+                    title: 'Workflows',
+                    href: workflows(),
+                    icon: GitBranch,
+                    permission: 'workflows.view',
+                    matchPrefix: true,
+                    alsoMatches: [workflowRuns()],
                 },
             ],
         },

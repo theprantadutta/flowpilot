@@ -10,6 +10,7 @@ use App\Enums\UseCase;
 use Carbon\CarbonImmutable;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * @property string $id
@@ -37,6 +39,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $contact_phone
  * @property string|null $address
  * @property array<string, mixed>|null $settings
+ * @property string|null $webhook_secret
  * @property CarbonImmutable|null $onboarded_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -46,6 +49,7 @@ use Illuminate\Support\Facades\Storage;
     'primary_use_case', 'timezone', 'locale', 'currency', 'date_format', 'contact_email',
     'contact_phone', 'address', 'settings', 'onboarded_at',
 ])]
+#[Hidden(['webhook_secret'])]
 class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
@@ -69,6 +73,7 @@ class Organization extends Model
         'contact_phone' => null,
         'address' => null,
         'settings' => null,
+        'webhook_secret' => null,
         'onboarded_at' => null,
     ];
 
@@ -83,6 +88,7 @@ class Organization extends Model
             'company_size' => CompanySize::class,
             'primary_use_case' => UseCase::class,
             'settings' => 'array',
+            'webhook_secret' => 'encrypted',
             'onboarded_at' => 'datetime',
         ];
     }
@@ -154,5 +160,17 @@ class Organization extends Model
             config('flowpilot.organization_settings', []),
             $this->settings ?? [],
         );
+    }
+
+    /**
+     * The key outgoing webhooks are signed with, created the first time one is sent.
+     */
+    public function webhookSecret(): string
+    {
+        if ($this->webhook_secret === null) {
+            $this->forceFill(['webhook_secret' => 'whsec_'.Str::random(40)])->save();
+        }
+
+        return (string) $this->webhook_secret;
     }
 }

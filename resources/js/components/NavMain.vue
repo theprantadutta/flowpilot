@@ -35,7 +35,10 @@ const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
                     as-child
                     :is-active="
                         item.matchPrefix
-                            ? isCurrentOrParentUrl(item.href)
+                            ? isCurrentOrParentUrl(item.href) ||
+                              (item.alsoMatches ?? []).some((href) =>
+                                  isCurrentOrParentUrl(href),
+                              )
                             : isCurrentUrl(item.href)
                     "
                     :tooltip="item.title"

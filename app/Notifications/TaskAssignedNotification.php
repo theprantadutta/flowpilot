@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Enums\NotificationType;
 use App\Models\Task;
-use App\Models\User;
 
 class TaskAssignedNotification extends TenantNotification
 {
@@ -27,11 +26,6 @@ class TaskAssignedNotification extends TenantNotification
         $this->taskTitle = $task->title;
         $this->dueDate = $task->due_date?->toFormattedDayDateString();
         $this->projectName = $task->project?->name;
-    }
-
-    public static function by(Task $task, ?User $actor): self
-    {
-        return new self($task, $actor?->name);
     }
 
     public function type(): NotificationType

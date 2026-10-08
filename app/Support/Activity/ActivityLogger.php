@@ -5,6 +5,7 @@ namespace App\Support\Activity;
 use App\Models\ActivityLog;
 use App\Models\Organization;
 use App\Models\User;
+use App\Models\WorkflowRun;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -56,6 +57,24 @@ class ActivityLogger
             'ip_address' => $request?->ip(),
             'user_agent' => $request ? Str::limit((string) $request->userAgent(), 250, '') : null,
         ]);
+    }
+
+    /**
+     * Properties that record a workflow made the change, for entries logged
+     * with the "workflow" actor type.
+     *
+     * @return array<string, string>
+     */
+    public static function automation(?WorkflowRun $run): array
+    {
+        if ($run === null) {
+            return [];
+        }
+
+        return [
+            'workflow' => (string) data_get($run->context, 'workflow.name', 'A workflow'),
+            'workflow_run' => $run->reference(),
+        ];
     }
 
     /**

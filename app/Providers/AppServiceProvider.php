@@ -15,8 +15,14 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskChecklistItem;
 use App\Models\User;
+use App\Models\WebhookDelivery;
+use App\Models\Workflow;
+use App\Models\WorkflowRun;
+use App\Models\WorkflowStepRun;
+use App\Models\WorkflowVersion;
 use App\Notifications\Channels\TenantDatabaseChannel;
 use App\Support\Tenancy\Tenancy;
+use App\Workflows\Triggers\TriggerRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -42,6 +48,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Database notifications record the organization they belong to.
         $this->app->bind(DatabaseChannel::class, TenantDatabaseChannel::class);
+
+        // Stateless catalog of what can start a workflow.
+        $this->app->singleton(TriggerRegistry::class);
     }
 
     /**
@@ -62,6 +71,13 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureRouteBindings(): void
     {
+        // Record ids are UUIDs. Anything else is a 404 before it reaches the
+        // database (PostgreSQL rejects malformed UUIDs with an error).
+        Route::patterns(array_fill_keys(
+            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run'],
+            '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
+        ));
+
         Route::bind('member', fn (string $value): OrganizationMembership => $this->app->make(Tenancy::class)
             ->currentOrFail()
             ->memberships()
@@ -117,6 +133,11 @@ class AppServiceProvider extends ServiceProvider
             'issue' => Issue::class,
             'comment' => Comment::class,
             'attachment' => Attachment::class,
+            'workflow' => Workflow::class,
+            'workflow_version' => WorkflowVersion::class,
+            'workflow_run' => WorkflowRun::class,
+            'workflow_step_run' => WorkflowStepRun::class,
+            'webhook_delivery' => WebhookDelivery::class,
         ]);
     }
 

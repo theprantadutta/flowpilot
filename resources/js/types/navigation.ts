@@ -16,6 +16,8 @@ export type NavItem = {
     permission?: Permission;
     /** Highlight for any URL under href, not only an exact match. */
     matchPrefix?: boolean;
+    /** Other sections that belong to this item, e.g. runs under workflows. */
+    alsoMatches?: NonNullable<InertiaLinkProps['href']>[];
     /** A count shown beside the item, e.g. pending approvals. */
     badge?: number;
 };

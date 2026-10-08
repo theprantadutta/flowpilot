@@ -16,6 +16,7 @@ enum NotificationType: string
     case ProjectUpdated = 'project_updated';
     case WorkflowFailed = 'workflow_failed';
     case WorkflowCompleted = 'workflow_completed';
+    case WorkflowMessage = 'workflow_message';
     case InventoryLow = 'inventory_low';
     case MemberJoined = 'member_joined';
 
@@ -30,6 +31,7 @@ enum NotificationType: string
             self::ProjectUpdated => 'Project you are on changed status',
             self::WorkflowFailed => 'Workflow run failed',
             self::WorkflowCompleted => 'Workflow you started finished',
+            self::WorkflowMessage => 'Message sent by a workflow',
             self::InventoryLow => 'Stock below reorder point',
             self::MemberJoined => 'Someone joined the organization',
         };
@@ -43,7 +45,7 @@ enum NotificationType: string
         return match ($this) {
             self::ApprovalRequired, self::ApprovalDecided => 'Approvals',
             self::TaskAssigned, self::TaskOverdue, self::IssueAssigned, self::ProjectUpdated => 'Work',
-            self::WorkflowFailed, self::WorkflowCompleted => 'Workflows',
+            self::WorkflowFailed, self::WorkflowCompleted, self::WorkflowMessage => 'Workflows',
             self::InventoryLow => 'Inventory',
             self::MemberJoined => 'Team',
         };
@@ -57,7 +59,7 @@ enum NotificationType: string
     {
         return match ($this) {
             self::ApprovalRequired, self::ApprovalDecided, self::TaskAssigned, self::TaskOverdue,
-            self::IssueAssigned, self::WorkflowFailed, self::InventoryLow => true,
+            self::IssueAssigned, self::WorkflowFailed, self::WorkflowMessage, self::InventoryLow => true,
             self::ProjectUpdated, self::WorkflowCompleted, self::MemberJoined => false,
         };
     }

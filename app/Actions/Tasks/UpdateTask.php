@@ -5,25 +5,31 @@ namespace App\Actions\Tasks;
 use App\Enums\TaskStatus;
 use App\Models\Task;
 use App\Models\User;
+use App\Models\WorkflowRun;
 use App\Notifications\TaskAssignedNotification;
 use App\Support\Activity\ActivityLogger;
+use App\Workflows\Engine\WorkflowTriggers;
 use Illuminate\Support\Facades\DB;
 
 class UpdateTask
 {
-    public function __construct(private readonly ActivityLogger $activity) {}
+    public function __construct(
+        private readonly ActivityLogger $activity,
+        private readonly WorkflowTriggers $triggers,
+    ) {}
 
     /**
      * Apply edits to a task, keep completion time and board order consistent,
      * record what changed and tell a new assignee.
      *
      * @param  array<string, mixed>  $attributes  Validated attributes to change.
+     * @param  WorkflowRun|null  $automation  The workflow run making the change, if a workflow is.
      */
-    public function handle(Task $task, User $actor, array $attributes): Task
+    public function handle(Task $task, ?User $actor, array $attributes, ?WorkflowRun $automation = null): Task
     {
         $previousAssignee = $task->assignee_id;
 
-        DB::transaction(function () use ($task, $actor, $attributes): void {
+        DB::transaction(function () use ($task, $actor, $attributes, $automation): void {
             $before = $this->snapshot($task);
 
             $task->fill($attributes);
@@ -45,16 +51,23 @@ class UpdateTask
             $changes = ActivityLogger::diff($before, $this->snapshot($task));
 
             if ($changes !== []) {
-                $this->activity->log($this->action($changes), $task, [
+                $action = $this->action($changes);
+
+                $this->activity->log($action, $task, [
                     'title' => $task->title,
                     'reference' => $task->reference(),
                     'changes' => $changes,
-                ], context: $task->project, actor: $actor);
+                    ...ActivityLogger::automation($automation),
+                ], context: $task->project, actor: $actor, actorType: $automation ? 'workflow' : 'user');
+
+                if ($action === 'task.completed') {
+                    $this->triggers->fire('task.completed', $task, $actor, $automation, occurrence: (string) $task->completed_at?->getTimestamp());
+                }
             }
         });
 
-        if ($task->assignee_id !== null && $task->assignee_id !== $previousAssignee && $task->assignee_id !== $actor->id) {
-            $task->assignee?->notify(TaskAssignedNotification::by($task, $actor));
+        if ($task->assignee_id !== null && $task->assignee_id !== $previousAssignee && $task->assignee_id !== $actor?->id) {
+            $task->assignee?->notify(new TaskAssignedNotification($task, $automation ? ActivityLogger::automation($automation)['workflow'] : $actor?->name));
         }
 
         return $task;

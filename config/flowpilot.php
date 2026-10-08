@@ -98,4 +98,22 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Outgoing webhooks
+    |--------------------------------------------------------------------------
+    |
+    | Workflows can send signed JSON to other systems. Addresses that resolve
+    | to private or local networks are always refused. Plain http is refused
+    | unless allowed here (for local development against a test receiver).
+    |
+    */
+
+    'webhooks' => [
+        'allow_http' => (bool) env('WEBHOOKS_ALLOW_HTTP', false),
+        'timeout_seconds' => 10,
+        'connect_timeout_seconds' => 5,
+        'max_response_bytes' => 2000,
+    ],
+
 ];

@@ -3,6 +3,7 @@
 use App\Enums\Role;
 use App\Models\Organization;
 use App\Models\User;
+use App\Models\Workflow;
 
 use function Pest\Laravel\actingAs;
 
@@ -47,4 +48,17 @@ it('matches wildcard characters literally', function () {
     actingAs($organization->owner)
         ->getJson(route('search', ['organization' => $organization, 'q' => 'sam_lee']))
         ->assertJsonCount(0, 'results');
+});
+
+it('finds workflows with their status and trigger', function () {
+    $organization = Organization::factory()->create();
+    Workflow::factory()->for($organization)->create(['name' => 'Purchase approval', 'trigger_type' => 'manual']);
+    Workflow::factory()->for(Organization::factory())->create(['name' => 'Purchase approval elsewhere']);
+
+    actingAs($organization->owner)
+        ->getJson(route('search', ['organization' => $organization, 'q' => 'purchase']))
+        ->assertOk()
+        ->assertJsonCount(1, 'results')
+        ->assertJsonPath('results.0.group', 'Workflows')
+        ->assertJsonPath('results.0.subtitle', 'Draft · Started by a person');
 });

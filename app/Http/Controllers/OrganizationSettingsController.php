@@ -63,6 +63,8 @@ class OrganizationSettingsController extends Controller
                     'require_two_factor' => (bool) $organization->setting('security.require_two_factor'),
                     'idle_timeout_minutes' => (int) $organization->setting('security.idle_timeout_minutes', 0),
                     'actor_has_two_factor' => $user->two_factor_confirmed_at !== null,
+                    // Only the last characters, so the page itself never carries the secret.
+                    'webhook_secret_hint' => $organization->webhook_secret !== null ? substr($organization->webhook_secret, -4) : null,
                 ],
                 'members' => [
                     'default_role' => (string) $organization->setting('members.default_role', 'employee'),

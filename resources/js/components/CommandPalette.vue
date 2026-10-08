@@ -6,14 +6,15 @@ import {
     ArrowLeftRight,
     Bell,
     CircleAlert,
-    FolderKanban,
-    ListChecks,
-    Plus,
     CornerDownLeft,
+    FolderKanban,
+    GitBranch,
     LayoutDashboard,
+    ListChecks,
     Loader2,
     MailPlus,
     Moon,
+    Plus,
     Search,
     Settings,
     Sun,
@@ -52,6 +53,8 @@ import { show as organizationSettings } from '@/routes/organization-settings';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as projectsIndex } from '@/routes/projects';
 import { index as tasksIndex } from '@/routes/tasks';
+import { index as runsIndex } from '@/routes/workflow-runs';
+import { index as workflowsIndex } from '@/routes/workflows';
 import type { Permission } from '@/types';
 
 type Command = {
@@ -138,6 +141,24 @@ const commands = computed<Command[]>(() => {
                 run: () => go(issuesIndex()),
             },
             {
+                id: 'go-workflows',
+                group: 'Go to',
+                label: 'Workflows',
+                icon: GitBranch,
+                permission: 'workflows.view',
+                keywords: 'automation builder',
+                run: () => go(workflowsIndex()),
+            },
+            {
+                id: 'go-runs',
+                group: 'Go to',
+                label: 'Workflow runs',
+                icon: GitBranch,
+                permission: 'workflows.view',
+                keywords: 'automation history failed',
+                run: () => go(runsIndex()),
+            },
+            {
                 id: 'go-activity',
                 group: 'Go to',
                 label: 'Activity',
@@ -172,6 +193,15 @@ const commands = computed<Command[]>(() => {
                 permission: 'issues.create',
                 keywords: 'new problem bug',
                 run: () => go(issuesIndex({}, { query: { create: 1 } })),
+            },
+            {
+                id: 'create-workflow',
+                group: 'Actions',
+                label: 'Create workflow',
+                icon: Plus,
+                permission: 'workflows.create',
+                keywords: 'new automation',
+                run: () => go(workflowsIndex({}, { query: { create: 1 } })),
             },
             {
                 id: 'go-members',

@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Enums\IssueSeverity;
 use App\Enums\NotificationType;
 use App\Models\Issue;
-use App\Models\User;
 
 class IssueAssignedNotification extends TenantNotification
 {
@@ -28,11 +27,6 @@ class IssueAssignedNotification extends TenantNotification
         $this->issueTitle = $issue->title;
         $this->severity = $issue->severity->label();
         $this->severityValue = $issue->severity->value;
-    }
-
-    public static function by(Issue $issue, ?User $actor): self
-    {
-        return new self($issue, $actor?->name);
     }
 
     public function type(): NotificationType
