@@ -8,8 +8,8 @@ FlowPilot is a multi-tenant SaaS for business operations and workflow automation
 - Vue 3 + TypeScript + Inertia 3, Tailwind CSS 4, Vite 8 via `vite-plus`, Wayfinder for typed routes, reka-ui (shadcn-vue) primitives.
 - Pest 5, Larastan (level 7), Pint.
 - Two deliberate pins, do not "upgrade" them without checking the reason still holds:
-  - `typescript` stays on 6.x. TypeScript 7 is the native compiler and does not ship the JS compiler `vue-tsc` loads.
-  - `vite-plus` stays on exactly `0.3.0` (what the Laravel starter kit targets). Later versions require aliasing `vite` to their fork, which conflicts with the Laravel, Inertia and Tailwind Vite plugins.
+    - `typescript` stays on 6.x. TypeScript 7 is the native compiler and does not ship the JS compiler `vue-tsc` loads.
+    - `vite-plus` stays on exactly `0.3.0` (what the Laravel starter kit targets). Later versions require aliasing `vite` to their fork, which conflicts with the Laravel, Inertia and Tailwind Vite plugins.
 
 ## Databases: PostgreSQL in production, SQLite in tests
 
@@ -50,6 +50,7 @@ FlowPilot is a multi-tenant SaaS for business operations and workflow automation
 
 - Pages in `resources/js/pages/{domain}`. Shared FlowPilot components in `resources/js/components`; reka-ui/shadcn primitives in `resources/js/components/ui`. Check for an existing component before writing a new one.
 - Use Wayfinder route functions (`@/routes`, `@/actions`), never hard-coded URLs.
+- Routes inside an organization get `{organization}` filled from the current page (`setUrlDefaults` in `app.ts`), so call them without it: `members.index()`. Never call them at module scope (e.g. in `defineOptions({ layout: … })`): that runs before the first page exists and is cached across organizations. Set breadcrumbs with `setLayoutProps()` inside `<script setup>` instead.
 - Use Inertia's `<Form>` / `useForm` for forms, with labels, inline errors and a processing state.
 - Type page props. Do not use `any`. Shared domain types live in `resources/js/types`.
 - Server state comes from Inertia props; no global store unless a real need appears.

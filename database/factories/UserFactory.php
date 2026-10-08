@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\Role;
+use App\Models\Organization;
+use App\Models\OrganizationMembership;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -43,6 +46,27 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Make the user an active member of the organization with the given role.
+     */
+    public function memberOf(Organization $organization, Role $role = Role::Employee): static
+    {
+        return $this->afterCreating(function (User $user) use ($organization, $role): void {
+            OrganizationMembership::factory()
+                ->for($organization)
+                ->for($user)
+                ->role($role)
+                ->create();
+        });
+    }
+
+    public function platformAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_platform_admin' => true,
         ]);
     }
 

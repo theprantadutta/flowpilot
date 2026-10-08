@@ -1,5 +1,6 @@
 import type { InertiaLinkProps } from '@inertiajs/vue3';
 import type { LucideIcon } from '@lucide/vue';
+import type { Permission } from './organization';
 
 export type BreadcrumbItem = {
     title: string;
@@ -11,4 +12,15 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon;
     isActive?: boolean;
+    /** Hide the item unless the member has this permission. */
+    permission?: Permission;
+    /** Highlight for any URL under href, not only an exact match. */
+    matchPrefix?: boolean;
+    /** A count shown beside the item, e.g. pending approvals. */
+    badge?: number;
+};
+
+export type NavGroup = {
+    title: string;
+    items: NavItem[];
 };

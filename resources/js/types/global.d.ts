@@ -1,5 +1,9 @@
 import type { Directive } from 'vue';
 import type { Auth } from '@/types/auth';
+import type {
+    CurrentOrganization,
+    OrganizationSummary,
+} from '@/types/organization';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -19,6 +23,9 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            /** Set on pages inside an organization (/app/{organization}/…). */
+            organization: CurrentOrganization | null;
+            organizations: OrganizationSummary[];
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

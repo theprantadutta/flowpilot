@@ -1,64 +1,128 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { LayoutDashboard, Users } from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import OrganizationAvatar from '@/components/OrganizationAvatar.vue';
+import OrganizationSwitcher from '@/components/OrganizationSwitcher.vue';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import { useOrganization } from '@/composables/useOrganization';
+import { dashboard, overview } from '@/routes';
+import { index as members } from '@/routes/members';
+import type { NavGroup } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
+const page = usePage();
+const { organization, can } = useOrganization();
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+/**
+ * Navigation for the current organization, trimmed to what the member may
+ * open. Groups with nothing left in them are dropped.
+ */
+const groups = computed<NavGroup[]>(() => {
+    if (!organization.value) {
+        return [];
+    }
+
+    const all: NavGroup[] = [
+        {
+            title: 'Operate',
+            items: [
+                {
+                    title: 'Overview',
+                    href: overview(),
+                    icon: LayoutDashboard,
+                    permission: 'dashboard.view',
+                },
+            ],
+        },
+        {
+            title: 'Admin',
+            items: [
+                {
+                    title: 'Members',
+                    href: members(),
+                    icon: Users,
+                    permission: 'members.view',
+                    matchPrefix: true,
+                },
+            ],
+        },
+    ];
+
+    return all
+        .map((group) => ({
+            ...group,
+            items: group.items.filter(
+                (item) => !item.permission || can(item.permission),
+            ),
+        }))
+        .filter((group) => group.items.length > 0);
+});
+
+const organizations = computed(() => page.props.organizations ?? []);
 </script>
 
 <template>
     <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
+        <SidebarHeader class="gap-3">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child>
+                    <SidebarMenuButton
+                        size="lg"
+                        as-child
+                        class="hover:bg-transparent active:bg-transparent"
+                    >
                         <Link :href="dashboard()">
-                            <AppLogo />
+                            <AppLogo class="text-foreground" />
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
+            <OrganizationSwitcher v-if="organizations.length > 0" />
         </SidebarHeader>
 
-        <SidebarContent>
-            <NavMain :items="mainNavItems" />
+        <SidebarSeparator class="mx-0" />
+
+        <SidebarContent class="scrollbar-thin">
+            <NavMain v-if="organization" :groups="groups" />
+
+            <!-- Outside an organization (account settings): list the ones you can open. -->
+            <SidebarGroup v-else-if="organizations.length > 0" class="px-2">
+                <SidebarGroupLabel>Your organizations</SidebarGroupLabel>
+                <SidebarMenu>
+                    <SidebarMenuItem
+                        v-for="item in organizations"
+                        :key="item.id"
+                    >
+                        <SidebarMenuButton as-child :tooltip="item.name">
+                            <Link :href="overview(item.slug)">
+                                <OrganizationAvatar
+                                    :name="item.name"
+                                    :logo="item.logo"
+                                    class="size-5 rounded text-[0.625rem]"
+                                />
+                                <span>{{ item.name }}</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarGroup>
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>
