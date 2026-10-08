@@ -3,12 +3,15 @@
 namespace App\Actions\Members;
 
 use App\Enums\MembershipStatus;
+use App\Enums\Permission;
 use App\Models\Invitation;
 use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Notifications\MemberJoinedNotification;
 use App\Support\Activity\ActivityLogger;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -77,14 +80,37 @@ class AcceptInvitation
             $user->forceFill(['last_organization_id' => $invitation->organization_id])->save();
             $user->unsetRelation('memberships');
 
-            $this->tenancy->run($invitation->organization, fn () => $this->activity->log(
-                'member.joined',
-                $membership,
-                ['role' => $membership->role->value, 'name' => $user->name],
-                actor: $user,
-            ));
+            $this->tenancy->run($invitation->organization, function () use ($membership, $user): void {
+                $this->activity->log(
+                    'member.joined',
+                    $membership,
+                    ['role' => $membership->role->value, 'name' => $user->name],
+                    actor: $user,
+                );
+
+                $this->notifyManagers($membership);
+            });
 
             return $membership;
         });
+    }
+
+    /**
+     * Let the people who manage members know someone new is in.
+     */
+    private function notifyManagers(OrganizationMembership $membership): void
+    {
+        $managers = OrganizationMembership::query()
+            ->where('organization_id', $membership->organization_id)
+            ->where('status', MembershipStatus::Active)
+            ->where('user_id', '!=', $membership->user_id)
+            ->with('user')
+            ->get()
+            ->filter(fn (OrganizationMembership $candidate): bool => $candidate->allows(Permission::MembersManage))
+            ->map(fn (OrganizationMembership $candidate) => $candidate->user);
+
+        if ($managers->isNotEmpty()) {
+            Notification::send($managers, MemberJoinedNotification::for($membership));
+        }
     }
 }

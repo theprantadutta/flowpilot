@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { LayoutDashboard, Users } from '@lucide/vue';
+import { LayoutDashboard, Settings, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -22,6 +22,7 @@ import {
 import { useOrganization } from '@/composables/useOrganization';
 import { dashboard, overview } from '@/routes';
 import { index as members } from '@/routes/members';
+import { show as organizationSettings } from '@/routes/organization-settings';
 import type { NavGroup } from '@/types';
 
 const page = usePage();
@@ -56,6 +57,13 @@ const groups = computed<NavGroup[]>(() => {
                     href: members(),
                     icon: Users,
                     permission: 'members.view',
+                    matchPrefix: true,
+                },
+                {
+                    title: 'Settings',
+                    href: organizationSettings(),
+                    icon: Settings,
+                    permission: 'settings.manage',
                     matchPrefix: true,
                 },
             ],

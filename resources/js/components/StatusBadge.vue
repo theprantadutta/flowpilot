@@ -1,20 +1,12 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
 import { cn } from '@/lib/utils';
+import type { Tone } from '@/types';
 
 /**
  * A status pill. Colour reinforces the label; it never replaces it, so the
  * text (and optional icon) must carry the meaning on its own.
  */
-export type Tone =
-    | 'neutral'
-    | 'info'
-    | 'success'
-    | 'warning'
-    | 'danger'
-    | 'flow'
-    | 'ai';
-
 const props = withDefaults(
     defineProps<{
         tone?: Tone;

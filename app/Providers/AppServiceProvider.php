@@ -5,14 +5,17 @@ namespace App\Providers;
 use App\Enums\Permission;
 use App\Models\ActivityLog;
 use App\Models\Invitation;
+use App\Models\Notification;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Notifications\Channels\TenantDatabaseChannel;
 use App\Support\Tenancy\Tenancy;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Log\Context\Repository as ContextRepository;
+use Illuminate\Notifications\Channels\DatabaseChannel;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Scoped, so each request and each queued job starts with no tenant.
         $this->app->scoped(Tenancy::class);
+
+        // Database notifications record the organization they belong to.
+        $this->app->bind(DatabaseChannel::class, TenantDatabaseChannel::class);
     }
 
     /**
@@ -98,6 +104,7 @@ class AppServiceProvider extends ServiceProvider
             'membership' => OrganizationMembership::class,
             'invitation' => Invitation::class,
             'activity_log' => ActivityLog::class,
+            'notification' => Notification::class,
         ]);
     }
 

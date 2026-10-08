@@ -57,15 +57,9 @@ return [
     */
 
     'organization_settings' => [
-        'branding' => [
-            'accent' => 'blue',
-        ],
         'notifications' => [
-            'email_approvals' => true,
-            'email_task_assignments' => true,
-            'email_workflow_failures' => true,
-            'email_low_stock' => true,
-            'daily_digest' => false,
+            // Per notification type: true/false overrides the type's own email default.
+            'email' => [],
         ],
         'workflows' => [
             'approval_due_hours' => 48,
@@ -74,10 +68,12 @@ return [
         ],
         'security' => [
             'require_two_factor' => false,
-            'session_timeout_minutes' => 120,
+            // Sign members out after this many idle minutes. 0 keeps the account-wide session lifetime.
+            'idle_timeout_minutes' => 0,
         ],
         'members' => [
             'default_role' => 'employee',
+            // Let any member invite colleagues as Employee, not only admins.
             'allow_member_invites' => false,
         ],
     ],

@@ -3,6 +3,7 @@ import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
+import OrganizationSettingsLayout from '@/layouts/settings/OrganizationSettingsLayout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 import { setUrlDefaults } from '@/wayfinder';
 
@@ -20,6 +21,8 @@ void createInertiaApp({
                 return AuthLayout;
             case name.startsWith('settings/'):
                 return [AppLayout, SettingsLayout];
+            case name.startsWith('organization-settings/'):
+                return [AppLayout, OrganizationSettingsLayout];
             default:
                 return AppLayout;
         }

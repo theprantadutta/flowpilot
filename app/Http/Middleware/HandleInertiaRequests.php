@@ -62,6 +62,7 @@ class HandleInertiaRequests extends Middleware
             // Lazy: the tenant middleware runs after this one, so the current
             // organization is only known once the page is rendered.
             'organization' => fn (): ?array => $this->currentOrganization(),
+            'unreadNotifications' => fn (): int => $this->unreadNotifications($user),
             'organizations' => fn (): array => $user instanceof User
                 ? $user->usableMemberships()
                     ->map(fn (OrganizationMembership $membership): array => [
@@ -75,6 +76,20 @@ class HandleInertiaRequests extends Middleware
                 : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    private function unreadNotifications(mixed $user): int
+    {
+        $organization = app(Tenancy::class)->current();
+
+        if (! $user instanceof User || $organization === null) {
+            return 0;
+        }
+
+        return $user->notifications()
+            ->where('organization_id', $organization->id)
+            ->whereNull('read_at')
+            ->count();
     }
 
     /**

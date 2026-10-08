@@ -27,7 +27,10 @@ class MemberController extends Controller
         $user = $request->user();
         $organization = $tenancy->currentOrFail();
         $actorRole = $tenancy->membership()?->role;
-        $canInvite = $user->can(Permission::MembersInvite->value);
+        $canInviteFreely = $user->can(Permission::MembersInvite->value);
+        // With member invites switched on, everyone may invite, but only as Employee.
+        $canInviteAsEmployee = ! $canInviteFreely && (bool) $organization->setting('members.allow_member_invites');
+        $canInvite = $canInviteFreely || $canInviteAsEmployee;
 
         $members = $organization->memberships()
             ->with('user:id,name,email,avatar_path')
@@ -55,7 +58,7 @@ class MemberController extends Controller
 
         return Inertia::render('members/Index', [
             'members' => $members,
-            'invitations' => $canInvite
+            'invitations' => $canInviteFreely
                 ? $organization->invitations()
                     ->unanswered()
                     ->with('inviter:id,name')
@@ -77,10 +80,12 @@ class MemberController extends Controller
                 'value' => $role->value,
                 'label' => $role->label(),
                 'description' => $role->description(),
-                'assignable' => $actorRole?->canAssign($role) ?? false,
+                'assignable' => $canInviteAsEmployee ? $role === Role::Employee : ($actorRole?->canAssign($role) ?? false),
             ]),
+            'defaultRole' => (string) $organization->setting('members.default_role', Role::Employee->value),
             'can' => [
                 'invite' => $canInvite,
+                'seeInvitations' => $canInviteFreely,
                 'manage' => $user->can(Permission::MembersManage->value),
             ],
         ]);

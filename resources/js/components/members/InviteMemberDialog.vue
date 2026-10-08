@@ -29,17 +29,21 @@ import type { RoleOption } from '@/types/members';
 const props = defineProps<{
     roles: RoleOption[];
     organizationName: string;
+    defaultRole?: string;
+    /** Open straight away, e.g. when arriving from the command palette. */
+    defaultOpen?: boolean;
 }>();
 
-const open = ref(false);
+const open = ref(props.defaultOpen ?? false);
 
 const assignableRoles = computed(() =>
     props.roles.filter((role) => role.assignable),
 );
 const defaultRole = computed(
     () =>
-        assignableRoles.value.find((role) => role.value === 'employee')
-            ?.value ?? assignableRoles.value[0]?.value,
+        assignableRoles.value.find(
+            (role) => role.value === (props.defaultRole ?? 'employee'),
+        )?.value ?? assignableRoles.value[0]?.value,
 );
 const selectedRole = ref<string | undefined>(defaultRole.value);
 const selectedDescription = computed(

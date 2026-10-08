@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -27,6 +28,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property string|null $avatar_path
  * @property string|null $timezone
+ * @property array{email?: array<string, bool>}|null $notification_preferences
  * @property bool $is_platform_admin
  * @property string|null $last_organization_id
  * @property Carbon|null $email_verified_at
@@ -40,7 +42,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property-read string|null $avatar
  * @property-read Collection<int, OrganizationMembership> $memberships
  */
-#[Fillable(['name', 'email', 'password', 'avatar_path', 'timezone'])]
+#[Fillable(['name', 'email', 'password', 'avatar_path', 'timezone', 'notification_preferences'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'avatar_path', 'is_platform_admin'])]
 #[Appends(['avatar'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
@@ -56,6 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     protected $attributes = [
         'avatar_path' => null,
         'timezone' => null,
+        'notification_preferences' => null,
         'is_platform_admin' => false,
         'last_organization_id' => null,
     ];
@@ -72,6 +75,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'is_platform_admin' => 'boolean',
+            'notification_preferences' => 'array',
         ];
     }
 
@@ -140,6 +144,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function lastOrganization(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'last_organization_id');
+    }
+
+    /**
+     * Notifications use FlowPilot's own model, which knows its organization.
+     *
+     * @return MorphMany<Notification, $this>
+     */
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(Notification::class, 'notifiable')->latest();
     }
 
     public function isPlatformAdmin(): bool

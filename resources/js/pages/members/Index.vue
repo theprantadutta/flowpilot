@@ -18,12 +18,18 @@ const props = defineProps<{
     members: MemberRow[];
     invitations: PendingInvitation[];
     roles: RoleOption[];
-    can: { invite: boolean; manage: boolean };
+    defaultRole: string;
+    can: { invite: boolean; manage: boolean; seeInvitations: boolean };
 }>();
 
 setLayoutProps({ breadcrumbs: [{ title: 'Members', href: membersIndex() }] });
 
 const { organization } = useOrganization();
+
+// The command palette's "Invite member" lands here with ?invite=1.
+const openInviteOnLoad =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('invite');
 
 type Tab = 'members' | 'invitations';
 const tab = ref<Tab>('members');
@@ -50,7 +56,7 @@ const activeCount = computed(
 
 const tabs = computed<{ id: Tab; label: string; count: number }[]>(() => [
     { id: 'members', label: 'Members', count: props.members.length },
-    ...(props.can.invite
+    ...(props.can.seeInvitations
         ? [
               {
                   id: 'invitations' as const,
@@ -76,6 +82,8 @@ const tabs = computed<{ id: Tab; label: string; count: number }[]>(() => [
                 <InviteMemberDialog
                     v-if="can.invite"
                     :roles="roles"
+                    :default-role="defaultRole"
+                    :default-open="openInviteOnLoad"
                     :organization-name="organization?.name ?? ''"
                 />
             </template>

@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\InvitationAcceptanceController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Middleware\EnforceOrganizationSecurity;
 use App\Http\Middleware\SetCurrentOrganization;
 use Illuminate\Support\Facades\Route;
 
@@ -32,7 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     | the tenant from the URL and checks membership before any binding happens.
     */
     Route::prefix('app/{organization}')
-        ->middleware(SetCurrentOrganization::class)
+        ->middleware([SetCurrentOrganization::class, EnforceOrganizationSecurity::class])
         ->group(base_path('routes/tenant.php'));
 });
 
