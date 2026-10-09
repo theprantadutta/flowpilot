@@ -73,6 +73,14 @@ enum ReportType: string
     }
 
     /**
+     * Reports every plan includes; the rest come with "all reports".
+     */
+    public function isBasic(): bool
+    {
+        return in_array($this, [self::ProjectProgress, self::TaskCompletion, self::Activity], true);
+    }
+
+    /**
      * What a member needs, besides reports.view, to see the data inside.
      */
     public function permission(): Permission

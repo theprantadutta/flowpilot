@@ -3,10 +3,13 @@
 namespace App\Actions\Ai;
 
 use App\Enums\AiBriefStatus;
+use App\Enums\Feature;
+use App\Enums\Limit;
 use App\Jobs\GenerateOperationsBrief;
 use App\Models\AiBrief;
 use App\Models\User;
 use App\Support\Ai\AiOperationsService;
+use App\Support\Billing\Entitlements;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -16,6 +19,7 @@ class RequestOperationsBrief
     public function __construct(
         private readonly AiOperationsService $ai,
         private readonly Tenancy $tenancy,
+        private readonly Entitlements $entitlements,
     ) {}
 
     /**
@@ -27,6 +31,8 @@ class RequestOperationsBrief
     public function handle(User $user): AiBrief
     {
         $organization = $this->tenancy->currentOrFail();
+
+        $this->entitlements->ensure(Feature::AiInsights, 'brief');
 
         if (! $this->ai->isEnabled()) {
             throw ValidationException::withMessages(['brief' => 'AI is not set up for this organization.']);
@@ -44,18 +50,15 @@ class RequestOperationsBrief
         }
 
         $memberKey = "ai-brief:member:{$organization->id}:{$user->id}";
-        $organizationKey = "ai-brief:organization:{$organization->id}";
 
         if (RateLimiter::tooManyAttempts($memberKey, (int) config('ai.brief.per_member_per_hour', 6))) {
             throw ValidationException::withMessages(['brief' => 'You have asked for several briefs this hour. Try again in '.$this->minutes(RateLimiter::availableIn($memberKey)).'.']);
         }
 
-        if (RateLimiter::tooManyAttempts($organizationKey, (int) config('ai.brief.per_organization_per_day', 100))) {
-            throw ValidationException::withMessages(['brief' => 'Your organization has used today\'s AI briefs. They reset within '.$this->minutes(RateLimiter::availableIn($organizationKey)).'.']);
-        }
+        // The plan sets how many briefs the whole organization gets each day.
+        $this->entitlements->ensureRoom(Limit::AiBriefsPerDay, 1, 'brief');
 
         RateLimiter::hit($memberKey, 3600);
-        RateLimiter::hit($organizationKey, 86400);
 
         $brief = AiBrief::query()->create(['user_id' => $user->id, 'status' => AiBriefStatus::Pending]);
 

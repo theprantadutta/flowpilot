@@ -36,3 +36,9 @@ Schedule::command('ai:prune-briefs')
     ->hourly()
     ->withoutOverlapping()
     ->onOneServer();
+
+// Reminds owners before a trial ends and moves ended trials to Free.
+Schedule::command('billing:check-trials')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();

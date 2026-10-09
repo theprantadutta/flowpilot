@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Bell, Building2, Globe2, ShieldCheck, Users } from '@lucide/vue';
+import {
+    Bell,
+    Building2,
+    CreditCard,
+    Globe2,
+    ShieldCheck,
+    Users,
+} from '@lucide/vue';
 import { computed } from 'vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useOrganization } from '@/composables/useOrganization';
 import { cn, toUrl } from '@/lib/utils';
+import { show as billing } from '@/routes/billing';
 import { show } from '@/routes/organization-settings';
 
 const { organization } = useOrganization();
@@ -24,9 +32,13 @@ const sections = computed(() => [
         icon: ShieldCheck,
     },
     { title: 'Members', href: show({ section: 'members' }), icon: Users },
+    { title: 'Plan and billing', href: billing(), icon: CreditCard },
 ]);
 
-function isActive(href: ReturnType<typeof show>, index: number): boolean {
+function isActive(
+    href: ReturnType<typeof show> | ReturnType<typeof billing>,
+    index: number,
+): boolean {
     // /settings and /settings/general are the same page.
     return isCurrentUrl(href) || (index === 0 && isCurrentUrl(show()));
 }

@@ -3,11 +3,13 @@
 namespace App\Jobs;
 
 use App\Enums\AiBriefStatus;
+use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Jobs\Concerns\RunsOnLongQueue;
 use App\Models\AiBrief;
 use App\Models\Organization;
 use App\Support\Ai\AiOperationsService;
+use App\Support\Billing\Entitlements;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -56,6 +58,12 @@ class GenerateOperationsBrief implements ShouldQueue
 
             if ($membership === null || ! $membership->isActive() || ! $membership->allows(Permission::AiUse)) {
                 $brief->forceFill(['status' => AiBriefStatus::Failed, 'error' => 'The member can no longer use AI in this organization.', 'completed_at' => now()])->save();
+
+                return;
+            }
+
+            if (! app(Entitlements::class)->allows(Feature::AiInsights, $organization)) {
+                $brief->forceFill(['status' => AiBriefStatus::Failed, 'error' => 'The organization\'s plan no longer includes AI briefs.', 'completed_at' => now()])->save();
 
                 return;
             }

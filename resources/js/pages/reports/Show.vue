@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, router, setLayoutProps, usePoll } from '@inertiajs/vue3';
-import { FileDown, SearchX } from '@lucide/vue';
+import { Head, Link, router, setLayoutProps, usePoll } from '@inertiajs/vue3';
+import { FileDown, Lock, SearchX } from '@lucide/vue';
 import { computed, reactive, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import ChartCard from '@/components/charts/ChartCard.vue';
@@ -22,6 +22,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { useOrganization } from '@/composables/useOrganization';
+import { show as billingShow } from '@/routes/billing';
 import { index as reportsIndex, show } from '@/routes/reports';
 import { store as storeExport } from '@/routes/reports/exports';
 import type { ResourceCollection } from '@/types/operations';
@@ -46,10 +47,10 @@ const props = defineProps<{
     result?: ReportResult;
     table?: ReportTableData;
     exports: ResourceCollection<ReportExportItem>;
-    can: { export: boolean };
+    can: { export: boolean; exportLocked: boolean };
 }>();
 
-const { organization } = useOrganization();
+const { organization, canAny } = useOrganization();
 const currency = computed(() => organization.value?.currency ?? 'USD');
 
 setLayoutProps({
@@ -221,6 +222,19 @@ const today = new Date().toISOString().slice(0, 10);
                     <FileDown v-else />
                     Export CSV
                 </Button>
+                <span
+                    v-else-if="can.exportLocked"
+                    class="inline-flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground"
+                >
+                    <Lock class="size-4" aria-hidden="true" />
+                    CSV exports come with the Business plan.
+                    <Link
+                        v-if="canAny('settings.manage', 'billing.manage')"
+                        :href="billingShow()"
+                        class="font-medium text-primary hover:underline"
+                        >See plans</Link
+                    >
+                </span>
             </template>
         </PageHeader>
 

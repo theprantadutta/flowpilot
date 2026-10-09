@@ -2,11 +2,14 @@
 
 namespace App\Actions\Workflows;
 
+use App\Enums\Feature;
+use App\Enums\NodeType;
 use App\Enums\WorkflowStatus;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowVersion;
 use App\Support\Activity\ActivityLogger;
+use App\Support\Billing\Entitlements;
 use App\Support\Tenancy\Tenancy;
 use App\Workflows\Definition\DefinitionValidator;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +25,7 @@ class PublishWorkflow
         private readonly DefinitionValidator $validator,
         private readonly ActivityLogger $activity,
         private readonly Tenancy $tenancy,
+        private readonly Entitlements $entitlements,
     ) {}
 
     /**
@@ -37,6 +41,16 @@ class PublishWorkflow
             throw ValidationException::withMessages([
                 'definition' => array_map(fn (array $issue): string => $issue['message'], $issues),
             ]);
+        }
+
+        $types = array_column($definition->nodes, 'type');
+
+        if (in_array(NodeType::Approval->value, $types, true)) {
+            $this->entitlements->ensure(Feature::Approvals, 'definition');
+        }
+
+        if (in_array(NodeType::Webhook->value, $types, true)) {
+            $this->entitlements->ensure(Feature::Webhooks, 'definition');
         }
 
         return DB::transaction(function () use ($workflow, $actor, $notes, $definition, $trigger): WorkflowVersion {

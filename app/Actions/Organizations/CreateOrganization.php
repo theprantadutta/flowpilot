@@ -2,7 +2,9 @@
 
 namespace App\Actions\Organizations;
 
+use App\Enums\Plan;
 use App\Enums\Role;
+use App\Enums\SubscriptionStatus;
 use App\Models\Organization;
 use App\Models\User;
 use App\Support\Activity\ActivityLogger;
@@ -44,6 +46,13 @@ class CreateOrganization
                 'role' => Role::Owner,
                 'joined_at' => now(),
                 'last_active_at' => now(),
+            ]);
+
+            // Every organization starts by trying the trial plan.
+            $organization->subscription()->create([
+                'plan' => Plan::from((string) config('billing.trial_plan', 'business')),
+                'status' => SubscriptionStatus::Trialing,
+                'trial_ends_at' => now()->addDays((int) config('billing.trial_days', 14)),
             ]);
 
             $owner->forceFill(['last_organization_id' => $organization->id])->save();

@@ -4,6 +4,7 @@ namespace App\Support\Activity;
 
 use App\Enums\IssueSeverity;
 use App\Enums\IssueStatus;
+use App\Enums\Plan;
 use App\Enums\ProjectStatus;
 use App\Enums\Role;
 use App\Enums\TaskStatus;
@@ -99,6 +100,10 @@ class ActivityPresenter
             'purchase_request.partly_received' => "received part of {$this->workItem($properties, $log)}",
             'purchase_request.received' => "received {$this->workItem($properties, $log)}",
             'purchase_request.cancelled' => "cancelled {$this->workItem($properties, $log)}",
+            'billing.plan_changed' => sprintf('moved the organization %s', ($to = Plan::tryFrom((string) $this->string($properties, 'to'))) !== null ? "to the {$to->label()} plan" : 'to a new plan'),
+            'billing.plan_change_requested' => sprintf('asked to upgrade to the %s plan', Plan::tryFrom((string) $this->string($properties, 'to'))?->label() ?? 'a higher'),
+            'billing.plan_change_withdrawn' => sprintf('withdrew the request to upgrade to the %s plan', Plan::tryFrom((string) $this->string($properties, 'to'))?->label() ?? 'a higher'),
+            'billing.details_updated' => 'updated the billing details',
             'report.exported' => sprintf('exported the %s report (%s)', $this->string($properties, 'report') ?? 'a', $this->string($properties, 'range') ?? 'all dates'),
             'settings.webhook_secret_viewed' => 'revealed the webhook signing secret',
             'settings.webhook_secret_rotated' => 'replaced the webhook signing secret',
@@ -190,6 +195,7 @@ class ActivityPresenter
             'ai' => 'sparkles',
             'file' => 'paperclip',
             'report' => 'file-down',
+            'billing' => 'gauge',
             default => 'activity',
         };
     }

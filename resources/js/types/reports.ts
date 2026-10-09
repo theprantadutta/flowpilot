@@ -86,6 +86,9 @@ export type ReportSummary = {
     description: string;
     icon: string;
     group: string;
+    /** Not in the organization's plan; `plan` names the one that has it. */
+    locked: boolean;
+    plan: string | null;
 };
 
 export type ReportFilterOption = {

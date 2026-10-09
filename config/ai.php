@@ -33,14 +33,14 @@ return [
     | Operations brief
     |--------------------------------------------------------------------------
     |
-    | Limits on how often briefs are written, per member and per organization,
-    | and how much is put in front of the model.
+    | How often one member may ask for a brief, and how much is put in front of
+    | the model. How many briefs an organization gets each day is set by its
+    | plan (config/billing.php).
     |
     */
 
     'brief' => [
         'per_member_per_hour' => (int) env('AI_BRIEF_PER_MEMBER_PER_HOUR', 6),
-        'per_organization_per_day' => (int) env('AI_BRIEF_PER_ORGANIZATION_PER_DAY', 100),
         // Facts sent per area, so a prompt never grows with the size of the organization.
         'facts_per_area' => 6,
         // Reasoning models spend part of this thinking, so leave room for the answer.

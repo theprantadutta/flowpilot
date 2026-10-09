@@ -7,6 +7,7 @@ import {
     CircleAlert,
     FolderKanban,
     GitBranch,
+    Hourglass,
     LayoutDashboard,
     ListChecks,
     Settings,
@@ -36,6 +37,7 @@ import { useOrganization } from '@/composables/useOrganization';
 import { dashboard, overview } from '@/routes';
 import { index as activity } from '@/routes/activity';
 import { index as approvals } from '@/routes/approvals';
+import { show as billingShow } from '@/routes/billing';
 import { index as inventory } from '@/routes/inventory/items';
 import { index as issues } from '@/routes/issues';
 import { index as members } from '@/routes/members';
@@ -181,6 +183,22 @@ const groups = computed<NavGroup[]>(() => {
 });
 
 const organizations = computed(() => page.props.organizations ?? []);
+
+/** A reminder for the people who look after the plan, while a trial runs. */
+const trial = computed(() => {
+    const plan = organization.value?.plan;
+
+    if (
+        !plan ||
+        plan.status !== 'trialing' ||
+        plan.trial_days_left === null ||
+        !(can('settings.manage') || can('billing.manage'))
+    ) {
+        return null;
+    }
+
+    return { label: plan.label, days: plan.trial_days_left };
+});
 </script>
 
 <template>
@@ -231,6 +249,18 @@ const organizations = computed(() => page.props.organizations ?? []);
         </SidebarContent>
 
         <SidebarFooter>
+            <Link
+                v-if="trial"
+                :href="billingShow()"
+                class="mx-1 flex items-center gap-2 rounded-lg border border-info/30 bg-info-soft/60 px-3 py-2 text-xs text-info-text transition-colors group-data-[collapsible=icon]:hidden hover:bg-info-soft"
+            >
+                <Hourglass class="size-3.5 shrink-0" aria-hidden="true" />
+                <span class="min-w-0">
+                    <span class="font-medium">{{ trial.label }} trial</span>:
+                    {{ trial.days }}
+                    {{ trial.days === 1 ? 'day' : 'days' }} left
+                </span>
+            </Link>
             <NavUser />
         </SidebarFooter>
     </Sidebar>

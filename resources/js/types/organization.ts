@@ -57,6 +57,24 @@ export type CurrentOrganization = {
     role: RoleValue;
     role_label: string;
     permissions: Permission[];
+    plan: OrganizationPlan;
+};
+
+/** Parts of FlowPilot that depend on the plan. */
+export type PlanFeature =
+    | 'approvals'
+    | 'all_reports'
+    | 'report_exports'
+    | 'ai_insights'
+    | 'webhooks';
+
+/** The plan in force now. Only decides what to show; the server checks every action. */
+export type OrganizationPlan = {
+    value: 'free' | 'starter' | 'business' | 'enterprise';
+    label: string;
+    status: 'trialing' | 'active' | 'past_due' | 'canceled';
+    trial_days_left: number | null;
+    features: PlanFeature[];
 };
 
 /** An organization the signed-in user can switch to. */

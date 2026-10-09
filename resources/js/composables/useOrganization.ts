@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import type { CurrentOrganization, Permission } from '@/types';
+import type { CurrentOrganization, Permission, PlanFeature } from '@/types';
 
 /**
  * The organization the current page belongs to and what the viewer may do in it.
@@ -27,5 +27,10 @@ export function useOrganization() {
         return list.some((permission) => permissions.value.has(permission));
     }
 
-    return { organization, can, canAny };
+    /** Whether the organization's plan includes a feature. */
+    function hasFeature(feature: PlanFeature): boolean {
+        return organization.value?.plan.features.includes(feature) ?? false;
+    }
+
+    return { organization, can, canAny, hasFeature };
 }

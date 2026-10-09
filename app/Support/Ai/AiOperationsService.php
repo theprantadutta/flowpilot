@@ -3,12 +3,14 @@
 namespace App\Support\Ai;
 
 use App\Enums\AiBriefStatus;
+use App\Enums\Feature;
 use App\Models\AiBrief;
 use App\Support\Ai\Brief\BriefFacts;
 use App\Support\Ai\Brief\BriefFallback;
 use App\Support\Ai\Brief\BriefParser;
 use App\Support\Ai\Brief\BriefPrompt;
 use App\Support\Ai\Brief\InvalidBrief;
+use App\Support\Billing\Entitlements;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Support\Facades\Log;
 
@@ -27,11 +29,15 @@ class AiOperationsService
         private readonly BriefParser $parser,
         private readonly BriefFallback $fallback,
         private readonly Tenancy $tenancy,
+        private readonly Entitlements $entitlements,
     ) {}
 
+    /**
+     * AI is available when a provider is set up and the plan includes it.
+     */
     public function isEnabled(): bool
     {
-        return $this->provider->isConfigured();
+        return $this->provider->isConfigured() && $this->entitlements->allows(Feature::AiInsights);
     }
 
     /**

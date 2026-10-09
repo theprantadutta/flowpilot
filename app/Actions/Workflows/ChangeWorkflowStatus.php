@@ -2,10 +2,12 @@
 
 namespace App\Actions\Workflows;
 
+use App\Enums\Limit;
 use App\Enums\WorkflowStatus;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Support\Activity\ActivityLogger;
+use App\Support\Billing\Entitlements;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -28,6 +30,11 @@ class ChangeWorkflowStatus
 
         if ($status === WorkflowStatus::Draft) {
             throw ValidationException::withMessages(['status' => 'A workflow cannot be moved back to draft.']);
+        }
+
+        // Bringing a workflow back from the archive counts against the limit again.
+        if ($workflow->status === WorkflowStatus::Archived) {
+            app(Entitlements::class)->ensureRoom(Limit::Workflows, 1, 'status');
         }
 
         $from = $workflow->status;

@@ -5,7 +5,9 @@ namespace Database\Factories;
 use App\Enums\CompanySize;
 use App\Enums\Industry;
 use App\Enums\OrganizationStatus;
+use App\Enums\Plan;
 use App\Enums\Role;
+use App\Enums\SubscriptionStatus;
 use App\Enums\UseCase;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
@@ -51,6 +53,24 @@ class OrganizationFactory extends Factory
                 ['organization_id' => $organization->id, 'user_id' => $organization->owner_id],
                 ['role' => Role::Owner, 'joined_at' => now()],
             );
+
+            if (! $organization->subscription()->exists()) {
+                $organization->subscription()->create(['plan' => Plan::Business, 'status' => SubscriptionStatus::Active]);
+            }
+        });
+    }
+
+    /**
+     * On a given plan, active (or on a trial when one is given).
+     */
+    public function onPlan(Plan $plan, ?SubscriptionStatus $status = null): static
+    {
+        return $this->afterCreating(function (Organization $organization) use ($plan, $status): void {
+            $organization->subscription()->updateOrCreate([], [
+                'plan' => $plan,
+                'status' => $status ?? SubscriptionStatus::Active,
+                'trial_ends_at' => $status === SubscriptionStatus::Trialing ? now()->addDays(7) : null,
+            ]);
         });
     }
 

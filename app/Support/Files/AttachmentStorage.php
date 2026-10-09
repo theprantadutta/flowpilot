@@ -2,8 +2,10 @@
 
 namespace App\Support\Files;
 
+use App\Enums\Limit;
 use App\Models\Attachment;
 use App\Models\User;
+use App\Support\Billing\Entitlements;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -28,6 +30,8 @@ class AttachmentStorage
     public function store(Model $attachable, UploadedFile $file, User $uploader): Attachment
     {
         $organizationId = (string) $attachable->getAttribute('organization_id');
+
+        app(Entitlements::class)->ensureRoom(Limit::StorageMb, (int) ceil(((int) $file->getSize()) / 1_048_576), 'file');
         $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension());
 
         $path = $file->storeAs(

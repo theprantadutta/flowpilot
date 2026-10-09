@@ -4,8 +4,10 @@ namespace App\Http\Middleware;
 
 use App\Enums\Permission;
 use App\Models\Approval;
+use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Support\Billing\Entitlements;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -118,7 +120,25 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{id: string, name: string, slug: string, logo: string|null, timezone: string, currency: string, date_format: string, role: string, role_label: string, permissions: list<string>}|null
+     * @return array{value: string, label: string, status: string, trial_days_left: int|null, features: list<string>}
+     */
+    private function plan(Organization $organization): array
+    {
+        $entitlements = app(Entitlements::class);
+        $subscription = $entitlements->subscription($organization);
+        $plan = $entitlements->plan($organization);
+
+        return [
+            'value' => $plan->value,
+            'label' => $plan->label(),
+            'status' => $subscription->status->value ?? 'active',
+            'trial_days_left' => $subscription?->trialDaysLeft(),
+            'features' => $entitlements->features($organization),
+        ];
+    }
+
+    /**
+     * @return array{id: string, name: string, slug: string, logo: string|null, timezone: string, currency: string, date_format: string, role: string, role_label: string, permissions: list<string>, plan: array{value: string, label: string, status: string, trial_days_left: int|null, features: list<string>}}|null
      */
     private function currentOrganization(): ?array
     {
@@ -141,6 +161,7 @@ class HandleInertiaRequests extends Middleware
             'role' => $membership->role->value,
             'role_label' => $membership->role->label(),
             'permissions' => $membership->permissionValues(),
+            'plan' => $this->plan($organization),
         ];
     }
 }

@@ -2,10 +2,12 @@
 
 namespace App\Actions\Workflows;
 
+use App\Enums\Limit;
 use App\Enums\MembershipStatus;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowRun;
+use App\Support\Billing\Entitlements;
 use App\Support\Tenancy\Tenancy;
 use App\Workflows\Engine\WorkflowEngine;
 use App\Workflows\Triggers\TriggerRegistry;
@@ -20,6 +22,7 @@ class StartWorkflowRun
         private readonly WorkflowEngine $engine,
         private readonly TriggerRegistry $triggers,
         private readonly Tenancy $tenancy,
+        private readonly Entitlements $entitlements,
     ) {}
 
     /**
@@ -31,6 +34,7 @@ class StartWorkflowRun
     public function handle(Workflow $workflow, User $actor, array $values, string $requestKey): WorkflowRun
     {
         $organization = $this->tenancy->currentOrFail();
+        $this->entitlements->ensureRoom(Limit::WorkflowRunsPerMonth, 1, 'workflow', $organization);
         $workflow->loadMissing('currentVersion');
         $version = $workflow->currentVersion ?? throw ValidationException::withMessages(['workflow' => 'Publish the workflow before starting it.']);
 

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, setLayoutProps, usePoll } from '@inertiajs/vue3';
-import { ArrowRight, FileDown } from '@lucide/vue';
+import { ArrowRight, FileDown, Lock } from '@lucide/vue';
 import { computed, watch } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import NamedIcon from '@/components/NamedIcon.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import ExportList from '@/components/reports/ExportList.vue';
+import { useOrganization } from '@/composables/useOrganization';
+import { show as billingShow } from '@/routes/billing';
 import { index as reportsIndex, show } from '@/routes/reports';
 import type { ResourceCollection } from '@/types/operations';
 import type { ReportExportItem, ReportSummary } from '@/types/reports';
@@ -15,6 +17,12 @@ const props = defineProps<{
     exports: ResourceCollection<ReportExportItem>;
     can: { export: boolean };
 }>();
+
+const { canAny } = useOrganization();
+const can = computed(() => ({
+    ...props.can,
+    billing: canAny('settings.manage', 'billing.manage'),
+}));
 
 setLayoutProps({ breadcrumbs: [{ title: 'Reports', href: reportsIndex() }] });
 
@@ -67,7 +75,41 @@ watch(preparing, (active) => (active ? start() : stop()));
             </h2>
             <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <li v-for="report in section.reports" :key="report.value">
+                    <div
+                        v-if="report.locked"
+                        class="flex h-full items-start gap-4 rounded-xl border border-dashed bg-card/60 p-5"
+                    >
+                        <span
+                            class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
+                        >
+                            <NamedIcon :name="report.icon" class="size-5" />
+                        </span>
+                        <span class="grid min-w-0 gap-1">
+                            <span
+                                class="flex flex-wrap items-center gap-2 font-semibold text-muted-foreground"
+                            >
+                                {{ report.label }}
+                                <span
+                                    class="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium"
+                                >
+                                    <Lock class="size-3" aria-hidden="true" />
+                                    {{ report.plan }} plan
+                                </span>
+                            </span>
+                            <span
+                                class="text-sm text-pretty text-muted-foreground"
+                                >{{ report.description }}</span
+                            >
+                            <Link
+                                v-if="can.billing"
+                                :href="billingShow()"
+                                class="text-sm font-medium text-primary hover:underline"
+                                >See plans</Link
+                            >
+                        </span>
+                    </div>
                     <Link
+                        v-else
                         :href="show({ report: report.value })"
                         class="group flex h-full items-start gap-4 rounded-xl border bg-card p-5 shadow-xs transition-[box-shadow,border-color] hover:border-border-strong hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >

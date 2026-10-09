@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\AiBrief;
 use App\Models\Approval;
 use App\Models\Attachment;
+use App\Models\BillingCustomer;
 use App\Models\Comment;
 use App\Models\InventoryCategory;
 use App\Models\InventoryItem;
@@ -18,9 +19,11 @@ use App\Models\Issue;
 use App\Models\Notification;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\PlanChangeRequest;
 use App\Models\Project;
 use App\Models\PurchaseRequest;
 use App\Models\ReportExport;
+use App\Models\Subscription;
 use App\Models\Supplier;
 use App\Models\Task;
 use App\Models\TaskChecklistItem;
@@ -33,6 +36,7 @@ use App\Models\WorkflowVersion;
 use App\Notifications\Channels\TenantDatabaseChannel;
 use App\Support\Ai\AiProvider;
 use App\Support\Ai\FreewayProvider;
+use App\Support\Billing\Entitlements;
 use App\Support\Tenancy\Tenancy;
 use App\Workflows\Triggers\TriggerRegistry;
 use Carbon\CarbonImmutable;
@@ -64,6 +68,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Stateless catalog of what can start a workflow.
         $this->app->singleton(TriggerRegistry::class);
+
+        // What the plan allows, cached for one request or job.
+        $this->app->scoped(Entitlements::class);
 
         // The AI provider behind AiOperationsService, chosen by config.
         $this->app->bind(AiProvider::class, function (): AiProvider {
@@ -97,7 +104,7 @@ class AppServiceProvider extends ServiceProvider
         // Record ids are UUIDs. Anything else is a 404 before it reaches the
         // database (PostgreSQL rejects malformed UUIDs with an error).
         Route::patterns(array_fill_keys(
-            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest', 'export', 'brief'],
+            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest', 'export', 'brief', 'planRequest'],
             '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
         ));
 
@@ -171,6 +178,9 @@ class AppServiceProvider extends ServiceProvider
             'purchase_request' => PurchaseRequest::class,
             'report_export' => ReportExport::class,
             'ai_brief' => AiBrief::class,
+            'subscription' => Subscription::class,
+            'billing_customer' => BillingCustomer::class,
+            'plan_change_request' => PlanChangeRequest::class,
         ]);
     }
 

@@ -7,6 +7,7 @@ use App\Actions\Approvals\RequestApproval;
 use App\Actions\Approvals\ResubmitApproval;
 use App\Actions\Approvals\WithdrawApproval;
 use App\Enums\ApprovalStatus;
+use App\Enums\Feature;
 use App\Enums\Permission;
 use App\Enums\Priority;
 use App\Enums\Role;
@@ -20,6 +21,7 @@ use App\Models\Attachment;
 use App\Models\Comment;
 use App\Models\User;
 use App\Support\Activity\ActivityPresenter;
+use App\Support\Billing\Entitlements;
 use App\Support\FormOptions;
 use App\Support\Search\Contains;
 use App\Support\Tenancy\Tenancy;
@@ -93,10 +95,12 @@ class ApprovalController extends Controller
         ]);
     }
 
-    public function store(StoreApprovalRequest $request, RequestApproval $requestApproval): RedirectResponse
+    public function store(StoreApprovalRequest $request, RequestApproval $requestApproval, Entitlements $entitlements): RedirectResponse
     {
         /** @var User $user */
         $user = $request->user();
+
+        $entitlements->ensure(Feature::Approvals, 'title');
 
         $approval = $requestApproval->handle($user, $request->approvalAttributes());
 

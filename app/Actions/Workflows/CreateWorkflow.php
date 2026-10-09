@@ -2,10 +2,12 @@
 
 namespace App\Actions\Workflows;
 
+use App\Enums\Limit;
 use App\Enums\WorkflowStatus;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Support\Activity\ActivityLogger;
+use App\Support\Billing\Entitlements;
 use App\Workflows\Templates\WorkflowTemplates;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -15,6 +17,7 @@ class CreateWorkflow
     public function __construct(
         private readonly ActivityLogger $activity,
         private readonly WorkflowTemplates $templates,
+        private readonly Entitlements $entitlements,
     ) {}
 
     /**
@@ -27,6 +30,8 @@ class CreateWorkflow
         if ($templateKey !== null && $templateKey !== 'blank' && $template === null) {
             throw new InvalidArgumentException("Unknown workflow template [{$templateKey}].");
         }
+
+        $this->entitlements->ensureRoom(Limit::Workflows, 1, 'name');
 
         $trigger = $template['trigger'] ?? $trigger;
 

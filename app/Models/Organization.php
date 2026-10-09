@@ -7,6 +7,7 @@ use App\Enums\Industry;
 use App\Enums\MembershipStatus;
 use App\Enums\OrganizationStatus;
 use App\Enums\UseCase;
+use App\Support\Tenancy\OrganizationScope;
 use Carbon\CarbonImmutable;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -120,6 +122,25 @@ class Organization extends Model
     public function activeMemberships(): HasMany
     {
         return $this->memberships()->where('status', MembershipStatus::Active);
+    }
+
+    /**
+     * Scoped by the relation itself, so it works outside the organization too
+     * (platform administration, scheduled work).
+     *
+     * @return HasOne<Subscription, $this>
+     */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)->withoutGlobalScope(OrganizationScope::class);
+    }
+
+    /**
+     * @return HasOne<BillingCustomer, $this>
+     */
+    public function billingCustomer(): HasOne
+    {
+        return $this->hasOne(BillingCustomer::class)->withoutGlobalScope(OrganizationScope::class);
     }
 
     /**

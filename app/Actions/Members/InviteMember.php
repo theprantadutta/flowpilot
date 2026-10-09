@@ -2,12 +2,14 @@
 
 namespace App\Actions\Members;
 
+use App\Enums\Limit;
 use App\Enums\Role;
 use App\Models\Invitation;
 use App\Models\Organization;
 use App\Models\User;
 use App\Notifications\OrganizationInvitationNotification;
 use App\Support\Activity\ActivityLogger;
+use App\Support\Billing\Entitlements;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -15,7 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 class InviteMember
 {
-    public function __construct(private readonly ActivityLogger $activity) {}
+    public function __construct(
+        private readonly ActivityLogger $activity,
+        private readonly Entitlements $entitlements,
+    ) {}
 
     /**
      * Invite someone to the organization by email. Any earlier unanswered
@@ -34,6 +39,10 @@ class InviteMember
                 'email' => 'That person is already a member of this organization.',
             ]);
         }
+
+        // Re-inviting someone replaces their open invitation, so it takes no new seat.
+        $replacing = $organization->invitations()->open()->whereRaw('lower(email) = ?', [$email])->exists();
+        $this->entitlements->ensureRoom(Limit::Members, $replacing ? 0 : 1, 'email', $organization);
 
         $token = Str::random(48);
 

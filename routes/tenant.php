@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AiBriefController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\InventoryMovementController;
@@ -65,6 +66,16 @@ Route::get('settings/webhook-secret', [WebhookSecretController::class, 'show'])
 Route::post('settings/webhook-secret', [WebhookSecretController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('organization-settings.webhook-secret.rotate');
+Route::get('settings/billing', [BillingController::class, 'show'])->name('billing.show');
+Route::post('settings/billing/plan-requests', [BillingController::class, 'requestPlan'])
+    ->middleware('throttle:5,1')
+    ->name('billing.plan-requests.store');
+Route::delete('settings/billing/plan-requests/{planRequest}', [BillingController::class, 'withdrawRequest'])->name('billing.plan-requests.destroy');
+Route::post('settings/billing/free', [BillingController::class, 'moveToFree'])
+    ->middleware('throttle:5,1')
+    ->name('billing.free');
+Route::patch('settings/billing/details', [BillingController::class, 'updateDetails'])->name('billing.details.update');
+
 Route::get('settings/{section?}', [OrganizationSettingsController::class, 'show'])
     ->whereIn('section', UpdateOrganizationSettingsRequest::SECTIONS)
     ->name('organization-settings.show');

@@ -21,6 +21,7 @@ enum NotificationType: string
     case PurchaseRequestUpdated = 'purchase_request_updated';
     case MemberJoined = 'member_joined';
     case ReportExportFinished = 'report_export_finished';
+    case PlanNotice = 'plan_notice';
 
     public function label(): string
     {
@@ -38,6 +39,7 @@ enum NotificationType: string
             self::PurchaseRequestUpdated => 'Your purchase request moved on',
             self::MemberJoined => 'Someone joined the organization',
             self::ReportExportFinished => 'A report you exported is ready',
+            self::PlanNotice => 'Trials, plan changes and limits',
         };
     }
 
@@ -53,6 +55,7 @@ enum NotificationType: string
             self::InventoryLow, self::PurchaseRequestUpdated => 'Inventory',
             self::MemberJoined => 'Team',
             self::ReportExportFinished => 'Reports',
+            self::PlanNotice => 'Team',
         };
     }
 
@@ -64,7 +67,8 @@ enum NotificationType: string
     {
         return match ($this) {
             self::ApprovalRequired, self::ApprovalDecided, self::TaskAssigned, self::TaskOverdue,
-            self::IssueAssigned, self::WorkflowFailed, self::WorkflowMessage, self::InventoryLow, self::PurchaseRequestUpdated => true,
+            self::IssueAssigned, self::WorkflowFailed, self::WorkflowMessage, self::InventoryLow, self::PurchaseRequestUpdated,
+            self::PlanNotice => true,
             self::ProjectUpdated, self::WorkflowCompleted, self::MemberJoined, self::ReportExportFinished => false,
         };
     }
