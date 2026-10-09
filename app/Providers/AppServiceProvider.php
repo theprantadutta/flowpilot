@@ -43,6 +43,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\DevCommands;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Log\Context\Repository as ContextRepository;
 use Illuminate\Notifications\Channels\DatabaseChannel;
 use Illuminate\Support\Facades\Context;
@@ -151,6 +152,12 @@ class AppServiceProvider extends ServiceProvider
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
         );
+
+        // Behind Traefik and nginx, the visitor's address and scheme arrive in
+        // forwarded headers; trust them only from the configured proxies.
+        if (is_string($proxies = config('flowpilot.security.trusted_proxies')) && $proxies !== '') {
+            TrustProxies::at($proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
 
         Password::defaults(fn (): ?Password => app()->isProduction()
             ? Password::min(12)

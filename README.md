@@ -67,6 +67,25 @@ composer run dev
 
 This runs the web server, the default queue worker, the long-running queue worker (report exports and AI briefs), the scheduler and Vite. Open the address in `APP_URL`, sign up, and create your first organization.
 
+### Demo data (development only)
+
+`php artisan db:seed` creates **Northstar Manufacturing**, a manufacturer with a month of realistic history built through FlowPilot's own workflows: three projects, purchase requests at every stage, approvals waiting on people, stock use that has triggered an automatic reorder, issues, and a critical stoppage being escalated. It refuses to run in production, needs `DEMO_PASSWORD` in `.env`, and does nothing if Northstar already exists.
+
+Every demo account signs in with `DEMO_PASSWORD`. They are for development and demos only.
+
+| Person            | Email                           | Role                   |
+| ----------------- | ------------------------------- | ---------------------- |
+| Daniel Okoro      | `daniel.okoro@northstar.test`   | Owner                  |
+| Maya Chen         | `maya.chen@northstar.test`      | Admin                  |
+| Marcus Reyes      | `marcus.reyes@northstar.test`   | Manager                |
+| Priya Nair        | `priya.nair@northstar.test`     | Finance                |
+| Tom Becker        | `tom.becker@northstar.test`     | Procurement            |
+| Sam Rivera        | `sam.rivera@northstar.test`     | Operations             |
+| Dana Whitfield    | `dana.whitfield@northstar.test` | Employee               |
+| FlowPilot Support | `support@flowpilot.test`        | Platform administrator |
+
+The five-minute demo: sign in as Dana and submit a purchase request over $5,000; switch to Marcus and approve it; switch to Priya and approve it; then, as Tom, see the request to order it. Along the way, show the workflow run step by step, the activity log, the reports, the workflow builder and the AI operations brief.
+
 ### Platform administration
 
 Platform administrators are granted from the command line only, so nobody can promote themselves through the web app:
@@ -94,18 +113,90 @@ Everything is configured through `.env`; `.env.example` documents each setting. 
 | `WEBHOOKS_ALLOW_HTTP`                                       | Allow webhook steps to call plain `http://` addresses. Leave `false` in production.                                                |
 | `LEGAL_ENTITY`, `LEGAL_CONTACT_EMAIL`, `LEGAL_JURISDICTION` | Who operates the service, as named in the terms of service and privacy policy.                                                     |
 | `FLOWPILOT_VERSION`                                         | The release being run, shown under platform administration.                                                                        |
+| `TRUSTED_PROXIES`                                           | Reverse proxies whose forwarded headers give the visitor's address and scheme. `*` behind Traefik (set by `compose.yml`).          |
+| `SESSION_SECURE_COOKIE`                                     | Secure session cookies. Defaults to on whenever `APP_URL` starts with `https://`.                                                  |
+| `CONTENT_SECURITY_POLICY`                                   | The content security policy that only runs FlowPilot's own scripts. On by default; skipped while the Vite dev server runs.         |
+| `DEMO_PASSWORD`                                             | Password for the Northstar demo accounts. Development only; leave empty in production.                                             |
 
-## Running in production
+## Deploying with Docker
 
-FlowPilot needs these processes alongside the web server:
+FlowPilot runs in production at **https://flowpilot.pranta.dev**, behind the same Traefik as the other services on the server (Freeway uses the same setup). `compose.yml` starts:
+
+| Service       | What it runs                                                                          |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `migrate`     | `php artisan migrate --force` once per deploy; everything else waits for it           |
+| `app`         | PHP-FPM with the application                                                          |
+| `web`         | nginx serving the built assets and passing PHP requests to `app`; Traefik routes here |
+| `worker`      | The default queue: notifications, mail, workflow steps and webhooks                   |
+| `worker-long` | The `long` queue: report exports and AI briefs                                        |
+| `scheduler`   | `schedule:work`: resumes waiting workflow runs, reminders, trial checks, pruning      |
+
+The `app` image (PHP 8.5 with OPcache) also runs the workers, the scheduler and migrations. The `web` image is nginx with the compiled frontend. Uploads, exports, logos and avatars live in the `storage` volume, shared by every container.
+
+### What the server needs
+
+- **Traefik** on the external `proxy` network, with a `websecure` entrypoint and a `letsencrypt` certificate resolver.
+- **DNS**: an A record for `flowpilot.pranta.dev` pointing at the server.
+- **PostgreSQL and Redis** reachable from the containers. Containers on the `proxy` network are reached by container name (for example `DB_HOST=postgres`, `REDIS_HOST=redis`). Services installed directly on the host are reached as `host.docker.internal`.
+- **Freeway** at `https://freeway.pranta.dev`, or by its container name on the `proxy` network.
+
+### First deploy
+
+```bash
+git clone <repository-url> flowpilot && cd flowpilot
+cp .env.example .env
+```
+
+Edit `.env` for production. Beyond the database, Redis, Freeway and mail settings:
+
+```dotenv
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://flowpilot.pranta.dev
+SESSION_SECURE_COOKIE=true
+DB_HOST=postgres
+REDIS_HOST=redis
+FLOWPILOT_VERSION=1.0.0
+DEMO_PASSWORD=
+```
+
+Then generate the application key, start everything, and make yourself a platform administrator once you have signed up:
+
+```bash
+docker compose run --rm --no-deps --entrypoint php app artisan key:generate --show
+# put the printed key in .env as APP_KEY, then:
+docker compose up -d --build
+docker compose exec app php artisan platform:admin you@example.com
+```
+
+### Updating
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+`migrate` runs any new migrations before the new `app`, workers and scheduler start, and every container caches its configuration, routes and views on start. Set `FLOWPILOT_VERSION` to tag the images and show the release under platform administration.
+
+### Day to day
+
+```bash
+docker compose ps                       # status and health
+docker compose logs -f app worker       # logs (everything logs to stdout)
+docker compose exec app php artisan …   # any artisan command
+```
+
+Back up the PostgreSQL database and the `flowpilot_storage` volume, which holds uploads and exports. The health page under platform administration checks the database, cache, queues, scheduler heartbeat, storage, mail and Freeway.
+
+### Without Docker
+
+Run PHP-FPM or another PHP server for the application, plus these processes:
 
 ```bash
 php artisan queue:work redis                                   # notifications, mail, workflow steps, webhooks
 php artisan queue:work redis-long --queue=long --timeout=960   # report exports and AI briefs
 php artisan schedule:work                                      # or a cron entry running schedule:run every minute
 ```
-
-The scheduler resumes waiting workflow runs every minute, checks overdue approvals every 15 minutes, sends overdue task reminders and trial notices hourly, prunes old AI briefs and report exports, and writes a heartbeat that the health page checks.
 
 Build the frontend with `npm run build`, cache configuration with `php artisan optimize`, and run `php artisan migrate --force` on each release.
 
@@ -142,11 +233,17 @@ app/
   Support/          tenancy, billing, reports, AI, activity, platform services
   Workflows/        triggers, step handlers, conditions and the run engine
 config/billing.php  plans, prices, limits and features
+database/seeders/   the Northstar Manufacturing demo
+docker/             nginx, PHP and entrypoint configuration for the images
 resources/js/       Vue pages, components, layouts and types
 resources/legal/    terms of service and privacy policy
 routes/             web, tenant (/app/{organization}), platform and console routes
 tests/              Pest feature and unit tests
 ```
+
+## Roadmap
+
+- **Realtime updates.** Live notifications, approval counts, workflow run progress and AI briefs pushed to the browser with Laravel Reverb, replacing today's polling. Broadcasting is switched off until then (`BROADCAST_CONNECTION=null`).
 
 ## License
 

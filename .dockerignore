@@ -1,0 +1,53 @@
+# Secrets and local environment never go into an image.
+.env
+.env.*
+!.env.example
+auth.json
+
+# Rebuilt inside the image.
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+public/fonts-manifest.dev.json
+bootstrap/ssr
+bootstrap/cache/*.php
+resources/js/actions
+resources/js/routes
+resources/js/wayfinder
+
+# Runtime state lives in volumes, not in the image.
+storage/app/*
+!storage/app/.gitignore
+!storage/app/public/.gitignore
+!storage/app/private/.gitignore
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+storage/logs/*
+storage/pail
+database/*.sqlite
+
+# Not needed to run FlowPilot.
+.git
+.github
+.idea
+.vscode
+.fleet
+.zed
+.claude
+.agents
+.cursor
+.junie
+.ai
+.phpunit.cache
+.phpunit.result.cache
+tests
+docs
+*.log
+compose.yml
+compose.*.yml
+Dockerfile
+.dockerignore

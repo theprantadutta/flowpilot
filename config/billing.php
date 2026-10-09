@@ -24,7 +24,7 @@ return [
     'trial_plan' => 'business',
 
     // Where "Talk to us" goes for Enterprise.
-    'sales_email' => env('BILLING_SALES_EMAIL', 'sales@flowpilot.app'),
+    'sales_email' => env('BILLING_SALES_EMAIL') ?: 'prantadutta1997@gmail.com',
 
     'plans' => [
         'free' => [

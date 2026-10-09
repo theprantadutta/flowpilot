@@ -1,0 +1,176 @@
+# FlowPilot in production, behind Traefik at https://flowpilot.pranta.dev.
+#
+#   docker compose up -d --build
+#
+# Requirements on the server (shared with the other apps, e.g. Freeway):
+#   - Traefik on the external "proxy" network, with a "websecure" entrypoint
+#     and a "letsencrypt" certificate resolver.
+#   - PostgreSQL and Redis reachable from the containers. On the "proxy"
+#     network use their container names (DB_HOST=postgres, REDIS_HOST=redis);
+#     if they run directly on the host, use DB_HOST=host.docker.internal.
+#   - A production .env next to this file (see README, "Deploying with Docker").
+
+name: flowpilot
+
+# Shared by every PHP container. Only "app" builds the image; the others run
+# the same image with a different command.
+x-php: &php
+    image: flowpilot:${FLOWPILOT_VERSION:-latest}
+    pull_policy: never
+    env_file:
+        - .env
+    environment:
+        # Containers log to stdout/stderr; docker collects it.
+        LOG_CHANNEL: stderr
+        # Only Traefik and nginx can reach the app, so trust their forwarded headers.
+        TRUSTED_PROXIES: '*'
+        FLOWPILOT_VERSION: ${FLOWPILOT_VERSION:-latest}
+    extra_hosts:
+        - 'host.docker.internal:host-gateway'
+    volumes:
+        - storage:/var/www/html/storage/app
+    networks:
+        - internal
+        - proxy
+    restart: unless-stopped
+
+services:
+    # Runs pending migrations once per deploy; everything else waits for it.
+    migrate:
+        <<: *php
+        container_name: flowpilot-migrate
+        command:
+            [
+                'php',
+                'artisan',
+                'migrate',
+                '--force',
+                '--isolated',
+                '--no-interaction',
+            ]
+        restart: 'no'
+
+    # PHP-FPM: the application itself.
+    app:
+        <<: *php
+        build:
+            context: .
+            target: app
+        pull_policy: build
+        container_name: flowpilot-app
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'php',
+                    '-r',
+                    "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);",
+                ]
+            interval: 15s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+
+    # nginx: static files, and PHP requests passed to "app". Traefik routes here.
+    web:
+        image: flowpilot-web:${FLOWPILOT_VERSION:-latest}
+        pull_policy: build
+        build:
+            context: .
+            target: web
+        container_name: flowpilot-web
+        volumes:
+            - storage:/var/www/html/storage/app:ro
+        networks:
+            - internal
+            - proxy
+        restart: unless-stopped
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.docker.network=proxy'
+            - 'traefik.http.routers.flowpilot.rule=Host(`flowpilot.pranta.dev`)'
+            - 'traefik.http.routers.flowpilot.entrypoints=websecure'
+            - 'traefik.http.routers.flowpilot.tls.certresolver=letsencrypt'
+            - 'traefik.http.services.flowpilot.loadbalancer.server.port=8080'
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'wget',
+                    '-q',
+                    '-O',
+                    '/dev/null',
+                    'http://127.0.0.1:8080/up',
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+        depends_on:
+            app:
+                condition: service_healthy
+
+    # Notifications, mail, workflow steps and webhooks.
+    worker:
+        <<: *php
+        container_name: flowpilot-worker
+        command:
+            [
+                'php',
+                'artisan',
+                'queue:work',
+                '--sleep=3',
+                '--tries=3',
+                '--max-time=3600',
+                '--no-interaction',
+            ]
+        stop_grace_period: 2m
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+
+    # Report exports and AI briefs, which can run for minutes.
+    worker-long:
+        <<: *php
+        container_name: flowpilot-worker-long
+        command:
+            [
+                'php',
+                'artisan',
+                'queue:work',
+                '${QUEUE_CONNECTION:-redis}-long',
+                '--queue=long',
+                '--timeout=960',
+                '--sleep=3',
+                '--max-time=3600',
+                '--no-interaction',
+            ]
+        stop_grace_period: 5m
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+
+    # Resumes waiting workflow runs, sends reminders, checks trials and prunes
+    # old exports and briefs.
+    scheduler:
+        <<: *php
+        container_name: flowpilot-scheduler
+        command: ['php', 'artisan', 'schedule:work', '--no-interaction']
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+
+volumes:
+    # Attachments, report exports, logos and avatars (storage/app).
+    storage:
+
+networks:
+    # Shared with Traefik and the other services on the server.
+    proxy:
+        external: true
+    # Private to FlowPilot: nginx to PHP-FPM.
+    internal:
+        driver: bridge

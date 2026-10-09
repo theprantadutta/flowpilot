@@ -16,6 +16,41 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Security
+    |--------------------------------------------------------------------------
+    |
+    | Trusted proxies: the reverse proxies (Traefik, nginx) whose forwarded
+    | headers tell FlowPilot the visitor's real address and that the request
+    | arrived over HTTPS. "*" trusts the one in front of the app, which is right
+    | only when nothing else can reach it; otherwise list their addresses.
+    |
+    | The content security policy only lets the page run FlowPilot's own
+    | scripts. It is skipped while the Vite dev server is running.
+    |
+    */
+
+    'security' => [
+        'trusted_proxies' => env('TRUSTED_PROXIES') ?: null,
+        'content_security_policy' => (bool) env('CONTENT_SECURITY_POLICY', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Demo
+    |--------------------------------------------------------------------------
+    |
+    | Password for the Northstar Manufacturing demo accounts created by the
+    | NorthstarDemoSeeder. Development and demos only: the seeder refuses to
+    | run in production or without a password.
+    |
+    */
+
+    'demo' => [
+        'password' => env('DEMO_PASSWORD') ?: null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Legal
     |--------------------------------------------------------------------------
     |
