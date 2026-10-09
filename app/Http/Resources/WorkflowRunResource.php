@@ -34,7 +34,7 @@ class WorkflowRunResource extends JsonResource
                 'label' => $this->subject_label,
                 'url' => $this->subjectUrl(),
             ] : null,
-            'starter' => $this->whenLoaded('starter', fn () => $this->starter ? new UserSummaryResource($this->starter) : null),
+            'starter' => $this->whenLoaded('starter', fn () => $this->starter ? (new UserSummaryResource($this->starter))->resolve($request) : null),
             'error' => $this->error,
             'created_at' => $this->created_at?->toIso8601String(),
             'started_at' => $this->started_at?->toIso8601String(),

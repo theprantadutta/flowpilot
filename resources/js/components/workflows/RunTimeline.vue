@@ -55,6 +55,20 @@ const hidden = new Set([
     'approval_url',
 ]);
 
+/** A task, issue or purchase request a step created, to link to it. */
+function createdLink(
+    step: WorkflowStepItem,
+): { url: string; reference: string } | null {
+    const url = step.output?.url;
+    const reference = step.output?.reference;
+
+    return step.type.value === 'create_record' &&
+        typeof url === 'string' &&
+        typeof reference === 'string'
+        ? { url, reference }
+        : null;
+}
+
 /** The approval request a step raised, to link to it. */
 function approvalLink(
     step: WorkflowStepItem,
@@ -144,7 +158,7 @@ function checks(step: WorkflowStepItem): Check[] {
                     <p class="font-medium">{{ step.label }}</p>
                     <EnumBadge :option="step.status" />
                     <span
-                        v-if="step.outcome_label"
+                        v-if="step.outcome_label && step.outcome !== 'next'"
                         class="rounded-full border px-2 py-0.5 text-xs font-medium"
                         >→ {{ step.outcome_label }}</span
                     >
@@ -230,6 +244,14 @@ function checks(step: WorkflowStepItem): Check[] {
                         </span>
                     </li>
                 </ul>
+
+                <Link
+                    v-if="createdLink(step)"
+                    :href="createdLink(step)!.url"
+                    class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                    Open {{ createdLink(step)!.reference }}
+                </Link>
 
                 <Link
                     v-if="approvalLink(step)"

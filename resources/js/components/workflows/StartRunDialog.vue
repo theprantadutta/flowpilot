@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { useOrganization } from '@/composables/useOrganization';
 import { store } from '@/routes/workflows/runs';
 import type { MemberOption } from '@/types/operations';
@@ -198,16 +197,17 @@ function submit() {
                                 : null
                         "
                         :members="members"
-                        none-label="Choose a member"
+                        :allow-none="!input.required"
+                        none-label="Nobody"
+                        placeholder="Choose a member"
                         @update:model-value="
                             (value) => setValue(input.key, value)
                         "
                     />
-                    <Textarea
+                    <Input
                         v-else
                         v-bind="field"
                         :model-value="text(input.key)"
-                        rows="2"
                         maxlength="2000"
                         @update:model-value="
                             (value) => setValue(input.key, String(value))

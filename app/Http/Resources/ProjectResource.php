@@ -25,7 +25,7 @@ class ProjectResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status->toOption(),
             'priority' => $this->priority->toOption(),
-            'owner' => $this->whenLoaded('owner', fn () => $this->owner ? new UserSummaryResource($this->owner) : null),
+            'owner' => $this->whenLoaded('owner', fn () => $this->owner ? (new UserSummaryResource($this->owner))->resolve($request) : null),
             'members' => UserSummaryResource::collection($this->whenLoaded('members')),
             'start_date' => $this->start_date?->toDateString(),
             'due_date' => $this->due_date?->toDateString(),

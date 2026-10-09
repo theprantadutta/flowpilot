@@ -32,7 +32,7 @@ class WorkflowResource extends JsonResource
             'has_unpublished_changes' => $this->whenLoaded('currentVersion', fn () => $this->hasUnpublishedChanges()),
             'published_at' => $this->published_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
-            'editor' => $this->whenLoaded('editor', fn () => $this->editor ? new UserSummaryResource($this->editor) : null),
+            'editor' => $this->whenLoaded('editor', fn () => $this->editor ? (new UserSummaryResource($this->editor))->resolve($request) : null),
             'runs_count' => isset($attributes['runs_count']) ? (int) $attributes['runs_count'] : null,
             'failed_runs_count' => isset($attributes['failed_runs_count']) ? (int) $attributes['failed_runs_count'] : null,
             'active_runs_count' => isset($attributes['active_runs_count']) ? (int) $attributes['active_runs_count'] : null,

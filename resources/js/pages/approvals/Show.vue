@@ -256,7 +256,7 @@ const outcome = computed(() => {
 
             <div class="grid gap-1.5">
                 <p class="text-xs font-medium text-muted-foreground">
-                    Decided by
+                    {{ approval.decider ? 'Decided by' : approval.is_open ? 'Waiting on' : 'Was waiting on' }}
                 </p>
                 <p
                     v-if="approval.decider"
@@ -285,7 +285,7 @@ const outcome = computed(() => {
                 </p>
             </div>
 
-            <div v-if="approval.due_at" class="grid gap-1.5">
+            <div v-if="approval.due_at && approval.is_open" class="grid gap-1.5">
                 <p class="text-xs font-medium text-muted-foreground">
                     Decision due
                 </p>
