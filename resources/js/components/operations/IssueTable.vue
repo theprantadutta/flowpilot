@@ -21,7 +21,9 @@ withDefaults(
     <table class="hidden w-full text-sm md:table">
         <thead>
             <tr class="border-b text-left text-xs text-muted-foreground">
-                <th scope="col" class="py-2.5 pr-3 pl-5 font-medium">Issue</th>
+                <th scope="col" class="w-[42%] py-2.5 pr-3 pl-5 font-medium">
+                    Issue
+                </th>
                 <th scope="col" class="px-3 py-2.5 font-medium">Severity</th>
                 <th scope="col" class="px-3 py-2.5 font-medium">Status</th>
                 <th scope="col" class="px-3 py-2.5 font-medium">Assignee</th>

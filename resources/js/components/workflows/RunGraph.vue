@@ -11,7 +11,7 @@ import {
     toFlowNodes,
 } from '@/lib/workflowCanvas';
 import type { StepState } from '@/lib/workflowCanvas';
-import { fieldsFor } from '@/lib/workflows';
+import { fieldsFor, NODE_KINDS } from '@/lib/workflows';
 import type {
     BuilderCatalog,
     DefinitionEdge,
@@ -36,19 +36,7 @@ const props = defineProps<{
 }>();
 
 const nodeTypes = Object.fromEntries(
-    [
-        'trigger',
-        'condition',
-        'branch',
-        'action',
-        'notification',
-        'delay',
-        'create_record',
-        'update_record',
-        'assign',
-        'webhook',
-        'end',
-    ].map((type) => [type, markRaw(WorkflowCanvasNode)]),
+    NODE_KINDS.map((type) => [type, markRaw(WorkflowCanvasNode)]),
 );
 
 const states = computed<Record<string, StepState>>(() => {

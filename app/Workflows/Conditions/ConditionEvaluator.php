@@ -41,8 +41,8 @@ class ConditionEvaluator
             $checks[] = [
                 'field' => $field->label,
                 'operator' => $operator->label(),
-                'expected' => $operator->needsValue() ? $rule['value'] : null,
-                'actual' => self::displayable($actual),
+                'expected' => $operator->needsValue() ? self::expectedForDisplay($field, $rule['value'], $currency) : null,
+                'actual' => self::actualForDisplay($field, $actual, $currency),
                 'passed' => $this->check($operator, $field->type, $actual, $rule['value'], $currency, $today),
             ];
         }
@@ -321,6 +321,31 @@ class ConditionEvaluator
         } catch (InvalidArgumentException) {
             return false;
         }
+    }
+
+    /**
+     * The rule's value as people read it: amounts as money ("$5,000.00").
+     */
+    private static function expectedForDisplay(Field $field, ?string $value, string $currency): ?string
+    {
+        if ($field->type === 'money' && $value !== null && self::isMoney($value, $currency)) {
+            return Money::format(Money::toMinorUnits($value, $currency), $currency);
+        }
+
+        return $value;
+    }
+
+    /**
+     * The run's value as people read it. Money is held in minor units
+     * (842000), so it is shown as an amount ($8,420.00).
+     */
+    private static function actualForDisplay(Field $field, mixed $value, string $currency): string|int|float|bool|null
+    {
+        if ($field->type === 'money' && is_numeric($value)) {
+            return Money::format((int) $value, $currency);
+        }
+
+        return self::displayable($value);
     }
 
     private static function displayable(mixed $value): string|int|float|bool|null

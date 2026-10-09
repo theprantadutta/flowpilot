@@ -277,7 +277,7 @@ const requestHref = purchaseRequestsIndex({}, { query: { create: 1 } });
                         >
                             <th
                                 scope="col"
-                                class="py-2.5 pr-3 pl-5 font-medium"
+                                class="w-[34%] py-2.5 pr-3 pl-5 font-medium"
                             >
                                 Item
                             </th>
@@ -296,7 +296,10 @@ const requestHref = purchaseRequestsIndex({}, { query: { create: 1 } });
                             >
                                 Reorder at
                             </th>
-                            <th scope="col" class="px-3 py-2.5 font-medium">
+                            <th
+                                scope="col"
+                                class="w-[18%] px-3 py-2.5 font-medium"
+                            >
                                 Supplier
                             </th>
                             <th

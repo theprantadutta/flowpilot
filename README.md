@@ -8,6 +8,10 @@
 FlowPilot is a multi-tenant SaaS for business operations. It turns repetitive processes into clear, connected workflows, so every request knows where it goes next and who it is waiting on.
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/overview.png" alt="The FlowPilot overview: headline figures, an AI operations brief written from the organization's records, and recent activity" width="100%">
+</p>
+
 ---
 
 ## What it does
@@ -22,6 +26,55 @@ FlowPilot is a multi-tenant SaaS for business operations. It turns repetitive pr
 - **Plans and billing.** Free, Starter, Business and Enterprise plans with limits and features enforced in one place, a trial for new organizations, and upgrade requests the FlowPilot team settles.
 - **Platform administration.** Organizations, people, plan changes, trials, suspensions, system health, failed jobs and a cross-organization audit log, for the team that runs FlowPilot.
 - **Public site.** Landing page, pricing, FAQ, terms of service and privacy policy, with search and social metadata.
+
+## Screenshots
+
+Shown with the Northstar Manufacturing demo data (`php artisan db:seed`).
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/workflow-builder.png" alt="Workflow builder with the purchase approval workflow"></td>
+    <td width="50%"><img src="docs/screenshots/workflow-run.png" alt="A workflow run, step by step, with each decision"></td>
+  </tr>
+  <tr>
+    <td><b>Workflow builder.</b> Steps from a fixed, validated set on a visual canvas, versioned and published deliberately.</td>
+    <td><b>Every run, step by step.</b> Who decided, when, and why the workflow took each path.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/approval.png" alt="An approval waiting on finance"></td>
+    <td><img src="docs/screenshots/purchase-request.png" alt="A purchase request with its approvals, delivery and audit trail"></td>
+  </tr>
+  <tr>
+    <td><b>Approvals.</b> Approve, reject or ask for changes, with due times and reminders.</td>
+    <td><b>Purchasing.</b> From request through manager and finance approval to delivery into stock.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/inventory.png" alt="Inventory items with stock levels"></td>
+    <td><img src="docs/screenshots/reports.png" alt="The workflow execution report"></td>
+  </tr>
+  <tr>
+    <td><b>Inventory.</b> Stock per location, low-stock alerts and automatic reorders.</td>
+    <td><b>Reports.</b> Charts with a table view of the same numbers, and CSV exports.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/project-board.png" alt="A project's tasks"></td>
+    <td><img src="docs/screenshots/platform.png" alt="Platform administration for one organization"></td>
+  </tr>
+  <tr>
+    <td><b>Projects and tasks.</b> Owners, priorities and due dates, with overdue work called out.</td>
+    <td><b>Platform administration.</b> Plans, usage, trials and suspensions for the team that runs FlowPilot.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/overview-dark.png" alt="The overview in dark mode"></td>
+    <td><img src="docs/screenshots/landing.png" alt="The public landing page"></td>
+  </tr>
+  <tr>
+    <td><b>Dark mode</b>, designed rather than inverted.</td>
+    <td><b>Public site</b> with pricing, FAQ and legal pages.</td>
+  </tr>
+</table>
+
+More in [`docs/screenshots`](docs/screenshots), including issues, the approvals inbox and the phone layout.
 
 ## Tech stack
 

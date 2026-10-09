@@ -11,12 +11,34 @@ import type {
     VariableOption,
     WorkflowField,
 } from '@/types/workflows';
+import { formatNumber } from '@/lib/format';
 
 /**
  * Helpers shared by the workflow builder and run pages: reading step
  * configuration safely, describing steps in words, and working out which
  * fields and values a step can use.
  */
+
+/**
+ * Every kind of step. Typed as a record so adding a kind without listing it
+ * here fails to compile; canvases register a node component for each.
+ */
+const nodeKinds: Record<NodeKind, true> = {
+    trigger: true,
+    condition: true,
+    branch: true,
+    approval: true,
+    action: true,
+    notification: true,
+    delay: true,
+    create_record: true,
+    update_record: true,
+    assign: true,
+    webhook: true,
+    end: true,
+};
+
+export const NODE_KINDS = Object.keys(nodeKinds) as NodeKind[];
 
 export function asString(value: unknown, fallback = ''): string {
     return typeof value === 'string' ? value : fallback;
@@ -273,6 +295,14 @@ export function describeRule(
                 ?.name ?? value;
     } else if (field.type === 'boolean') {
         value = value === 'true' ? 'yes' : 'no';
+    } else if (field.type === 'money' || field.type === 'number') {
+        const amount = Number(value.replaceAll(',', ''));
+
+        if (value !== '' && Number.isFinite(amount)) {
+            value = formatNumber(amount, {
+                maximumFractionDigits: 2,
+            });
+        }
     }
 
     return `${field.label} ${operator.label} ${value}`;

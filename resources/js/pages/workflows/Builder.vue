@@ -78,6 +78,7 @@ import {
     defaultConfig,
     fieldsFor,
     handlesFor,
+    NODE_KINDS,
     shortId,
     variablesFor,
 } from '@/lib/workflows';
@@ -140,19 +141,7 @@ const roomy = useMediaQuery('(min-width: 1536px)');
 const editable = computed(() => props.can.update && !compact.value);
 
 const nodeTypes = Object.fromEntries(
-    [
-        'trigger',
-        'condition',
-        'branch',
-        'action',
-        'notification',
-        'delay',
-        'create_record',
-        'update_record',
-        'assign',
-        'webhook',
-        'end',
-    ].map((type) => [type, markRaw(WorkflowCanvasNode)]),
+    NODE_KINDS.map((type) => [type, markRaw(WorkflowCanvasNode)]),
 );
 
 const {
@@ -1105,7 +1094,7 @@ const issueCount = computed(() => props.issues.length);
                     />
                 </template>
 
-                <div v-else class="grid gap-5">
+                <div v-else class="grid grid-cols-1 gap-5">
                     <div>
                         <p class="text-sm font-medium">About this workflow</p>
                         <p class="mt-1 text-sm text-muted-foreground">
@@ -1118,7 +1107,7 @@ const issueCount = computed(() => props.issues.length);
                         Select a step to change what it does. The draft saves as
                         you work; runs only use what you publish.
                     </p>
-                    <div class="grid gap-2">
+                    <div class="grid grid-cols-1 gap-2">
                         <p class="text-sm font-medium">Recent runs</p>
                         <Deferred data="recentRuns">
                             <template #fallback>
@@ -1136,7 +1125,7 @@ const issueCount = computed(() => props.issues.length);
                             >
                                 No runs yet.
                             </p>
-                            <ul v-else class="grid gap-1.5">
+                            <ul v-else class="grid grid-cols-1 gap-1.5">
                                 <li
                                     v-for="run in recentRuns.data"
                                     :key="run.id"

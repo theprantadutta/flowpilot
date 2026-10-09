@@ -113,7 +113,7 @@ test('all needs every rule and any needs one', function () {
         ->and(conditionPasses($rules, $context, 'any'))->toBeTrue();
 });
 
-test('results explain each comparison', function () {
+test('results explain each comparison, showing amounts as money', function () {
     $result = (new ConditionEvaluator)->evaluate(
         ['match' => 'all', 'rules' => [['field' => 'input.amount', 'operator' => 'greater_than', 'value' => '5000']]],
         ['input' => ['amount' => 620000]],
@@ -125,8 +125,8 @@ test('results explain each comparison', function () {
     expect($result->checks)->toBe([[
         'field' => 'Amount',
         'operator' => 'is greater than',
-        'expected' => '5000',
-        'actual' => 620000,
+        'expected' => '$5,000.00',
+        'actual' => '$6,200.00',
         'passed' => true,
     ]]);
 });

@@ -547,7 +547,7 @@ watch(stepIndex, async () => {
                             </dl>
 
                             <div class="grid max-w-xl gap-4 sm:grid-cols-2">
-                                <div class="grid gap-2">
+                                <div class="grid content-start gap-2">
                                     <Label for="organization-timezone"
                                         >Timezone</Label
                                     >
@@ -568,7 +568,7 @@ watch(stepIndex, async () => {
                                         :message="form.errors.timezone"
                                     />
                                 </div>
-                                <div class="grid gap-2">
+                                <div class="grid content-start gap-2">
                                     <Label for="organization-currency"
                                         >Currency</Label
                                     >

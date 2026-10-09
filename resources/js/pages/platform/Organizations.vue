@@ -138,7 +138,7 @@ function trialHint(row: PlatformOrganizationRow): string | null {
                         >
                             <th
                                 scope="col"
-                                class="py-2.5 pr-3 pl-5 font-medium"
+                                class="w-[30%] py-2.5 pr-3 pl-5 font-medium"
                             >
                                 Organization
                             </th>
