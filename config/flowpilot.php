@@ -16,6 +16,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Legal
+    |--------------------------------------------------------------------------
+    |
+    | Who operates this FlowPilot service, as named in the terms of service and
+    | the privacy policy, and where people write about them. The jurisdiction
+    | is left out of the terms when it is not set.
+    |
+    */
+
+    'legal' => [
+        'entity' => env('LEGAL_ENTITY') ?: 'Pranta Dutta',
+        'contact_email' => env('LEGAL_CONTACT_EMAIL') ?: 'prantadutta1997@gmail.com',
+        'jurisdiction' => env('LEGAL_JURISDICTION') ?: null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Invitations
     |--------------------------------------------------------------------------
     |

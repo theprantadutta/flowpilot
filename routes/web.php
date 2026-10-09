@@ -2,13 +2,22 @@
 
 use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\InvitationAcceptanceController;
+use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Middleware\EnforceOrganizationSecurity;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\SetCurrentOrganization;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+/*
+| The public site. Everything else is behind sign-in and is never indexed.
+*/
+Route::get('/', [MarketingController::class, 'home'])->name('home');
+Route::get('pricing', [MarketingController::class, 'pricing'])->name('pricing');
+Route::get('terms', [MarketingController::class, 'terms'])->name('legal.terms');
+Route::get('privacy', [MarketingController::class, 'privacy'])->name('legal.privacy');
+Route::get('sitemap.xml', [MarketingController::class, 'sitemap'])->name('sitemap');
+Route::get('robots.txt', [MarketingController::class, 'robots'])->name('robots');
 
 /*
 | Invitation links. The token is the credential, so these are throttled and

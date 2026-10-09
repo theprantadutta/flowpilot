@@ -2,6 +2,7 @@ import { createInertiaApp, usePage } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import MarketingLayout from '@/layouts/MarketingLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import PlatformLayout from '@/layouts/PlatformLayout.vue';
 import OrganizationSettingsLayout from '@/layouts/settings/OrganizationSettingsLayout.vue';
@@ -14,7 +15,6 @@ void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case name === 'Welcome':
             case name.startsWith('onboarding/'):
             case name.startsWith('invitations/'):
                 return null;
@@ -26,6 +26,8 @@ void createInertiaApp({
                 return [AppLayout, OrganizationSettingsLayout];
             case name.startsWith('platform/'):
                 return PlatformLayout;
+            case name.startsWith('marketing/'):
+                return MarketingLayout;
             default:
                 return AppLayout;
         }

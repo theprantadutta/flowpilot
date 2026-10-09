@@ -33,8 +33,22 @@ enum Limit: string
             self::Members => 'Members',
             self::Workflows => 'Workflows',
             self::WorkflowRunsPerMonth => 'Workflow runs a month',
-            self::StorageMb => 'File storage in MB',
+            self::StorageMb => 'File storage',
             self::AiBriefsPerDay => 'AI briefs a day',
+        };
+    }
+
+    /**
+     * The limit as a table cell: "50", "10 GB", "Unlimited", or null when the
+     * plan does not include it at all.
+     */
+    public function shortValue(?int $value): ?string
+    {
+        return match (true) {
+            $value === null => 'Unlimited',
+            $value === 0 => null,
+            $this === self::StorageMb => $value >= 1024 ? number_format($value / 1024).' GB' : number_format($value).' MB',
+            default => number_format($value),
         };
     }
 

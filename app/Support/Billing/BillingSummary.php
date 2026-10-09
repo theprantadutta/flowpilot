@@ -72,6 +72,27 @@ class BillingSummary
     }
 
     /**
+     * The plans compared row by row, for the pricing page: each limit with
+     * its value per plan, then each feature with whether a plan includes it.
+     *
+     * @return array{plans: list<string>, limits: list<array{label: string, values: list<string|null>}>, features: list<array{label: string, included: list<bool>}>}
+     */
+    public function comparison(): array
+    {
+        return [
+            'plans' => array_map(fn (Plan $plan): string => $plan->label(), Plan::cases()),
+            'limits' => array_map(fn (Limit $limit): array => [
+                'label' => $limit->capLabel(),
+                'values' => array_map(fn (Plan $plan): ?string => $limit->shortValue($plan->limit($limit)), Plan::cases()),
+            ], Limit::cases()),
+            'features' => array_map(fn (Feature $feature): array => [
+                'label' => $feature->label(),
+                'included' => array_map(fn (Plan $plan): bool => $plan->includes($feature), Plan::cases()),
+            ], Feature::cases()),
+        ];
+    }
+
+    /**
      * "$29" for whole amounts, "$29.50" otherwise.
      */
     private function price(Plan $plan): ?string

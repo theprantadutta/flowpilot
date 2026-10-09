@@ -9,6 +9,12 @@
         "saas"
     ],
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Pranta Dutta",
+            "email": "prantadutta1997@gmail.com"
+        }
+    ],
     "require": {
         "php": "^8.3",
         "inertiajs/inertia-laravel": "^3.0",

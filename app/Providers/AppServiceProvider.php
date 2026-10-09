@@ -42,6 +42,7 @@ use App\Workflows\Triggers\TriggerRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Log\Context\Repository as ContextRepository;
 use Illuminate\Notifications\Channels\DatabaseChannel;
 use Illuminate\Support\Facades\Context;
@@ -93,6 +94,23 @@ class AppServiceProvider extends ServiceProvider
         $this->configureTenancy();
         $this->configureAuthorization();
         $this->configureRouteBindings();
+        $this->configureDevProcesses();
+    }
+
+    /**
+     * Everything FlowPilot needs locally, for "composer run dev": besides the
+     * server, queue and Vite, a worker for exports and AI briefs on the long
+     * queue, and the scheduler that resumes workflows and sends reminders.
+     */
+    protected function configureDevProcesses(): void
+    {
+        $long = config('queue.default').'-long';
+
+        if (array_key_exists($long, (array) config('queue.connections'))) {
+            DevCommands::artisan("queue:listen {$long} --queue=long --tries=1 --timeout=0", 'long-queue');
+        }
+
+        DevCommands::artisan('schedule:work', 'scheduler');
     }
 
     /**

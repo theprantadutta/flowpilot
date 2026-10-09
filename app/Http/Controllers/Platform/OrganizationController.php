@@ -109,7 +109,10 @@ class OrganizationController extends Controller
                 'created_at' => $organization->created_at?->toIso8601String(),
             ],
             'billing' => $billing->for($organization),
-            'limits' => array_map(fn (Limit $limit): array => ['key' => $limit->value, 'label' => $limit->capLabel()], Limit::cases()),
+            'limits' => array_map(fn (Limit $limit): array => [
+                'key' => $limit->value,
+                'label' => $limit === Limit::StorageMb ? "{$limit->capLabel()} in MB" : $limit->capLabel(),
+            ], Limit::cases()),
             'limitOverrides' => $organization->subscription?->limit_overrides,
             'plans' => array_map(fn (Plan $plan): array => ['value' => $plan->value, 'label' => $plan->label()], Plan::cases()),
             'activity' => [
