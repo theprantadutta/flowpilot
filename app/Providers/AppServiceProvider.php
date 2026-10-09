@@ -7,12 +7,19 @@ use App\Models\ActivityLog;
 use App\Models\Approval;
 use App\Models\Attachment;
 use App\Models\Comment;
+use App\Models\InventoryCategory;
+use App\Models\InventoryItem;
+use App\Models\InventoryLocation;
+use App\Models\InventoryMovement;
+use App\Models\InventoryStockLevel;
 use App\Models\Invitation;
 use App\Models\Issue;
 use App\Models\Notification;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Project;
+use App\Models\PurchaseRequest;
+use App\Models\Supplier;
 use App\Models\Task;
 use App\Models\TaskChecklistItem;
 use App\Models\User;
@@ -75,7 +82,7 @@ class AppServiceProvider extends ServiceProvider
         // Record ids are UUIDs. Anything else is a 404 before it reaches the
         // database (PostgreSQL rejects malformed UUIDs with an error).
         Route::patterns(array_fill_keys(
-            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval'],
+            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest'],
             '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
         ));
 
@@ -140,6 +147,13 @@ class AppServiceProvider extends ServiceProvider
             'workflow_step_run' => WorkflowStepRun::class,
             'webhook_delivery' => WebhookDelivery::class,
             'approval' => Approval::class,
+            'inventory_category' => InventoryCategory::class,
+            'inventory_item' => InventoryItem::class,
+            'inventory_location' => InventoryLocation::class,
+            'inventory_stock_level' => InventoryStockLevel::class,
+            'inventory_movement' => InventoryMovement::class,
+            'supplier' => Supplier::class,
+            'purchase_request' => PurchaseRequest::class,
         ]);
     }
 

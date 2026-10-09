@@ -193,6 +193,9 @@ export function variablesFor(
         })),
         ...catalog.variables.common,
         ...(subject ? catalog.variables.subject : []),
+        ...(subject === 'task' || subject === 'issue'
+            ? catalog.variables.work
+            : []),
         ...stepVariables,
     ];
 }
@@ -322,7 +325,9 @@ export function describeNode(
             return `Wait ${amount} ${amount === 1 ? unit.replace(/s$/, '') : unit}`;
         }
         case 'create_record':
-            return `New ${asString(config.record, 'task')}: ${asString(config.title) || 'untitled'}`;
+            return config.record === 'purchase_request'
+                ? `Reorder ${config.quantity ? `${Number(config.quantity)}` : 'the reorder quantity'}`
+                : `New ${asString(config.record, 'task')}: ${asString(config.title) || 'untitled'}`;
         case 'update_record': {
             const field = asString(config.field);
 

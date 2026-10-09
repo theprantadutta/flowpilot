@@ -5,6 +5,7 @@ namespace App\Workflows\Nodes;
 use App\Actions\Issues\UpdateIssue;
 use App\Actions\Tasks\UpdateTask;
 use App\Enums\NodeType;
+use App\Models\Issue;
 use App\Models\Task;
 use App\Workflows\Definition\ValidationScope;
 use App\Workflows\Support\People;
@@ -30,8 +31,8 @@ class AssignHandler extends BaseHandler
 
     public function validate(array $config, ValidationScope $scope): array
     {
-        if (! $scope->hasSubject()) {
-            return ['This trigger has no record to assign. Use a trigger about a task or an issue.'];
+        if (! $scope->subjectIsWork()) {
+            return ['Only tasks and issues can be assigned. Use a trigger about a task or an issue.'];
         }
 
         if (! is_array($config['assignee'] ?? null)) {
@@ -44,6 +45,11 @@ class AssignHandler extends BaseHandler
     public function execute(StepContext $step): StepResult
     {
         $subject = $step->subjectOrFail();
+
+        if (! $subject instanceof Task && ! $subject instanceof Issue) {
+            throw StepFailed::permanent('Only tasks and issues can be assigned.');
+        }
+
         $assignee = $this->people->pickOne($step->organization, $step->config()['assignee'] ?? null, $step->context);
 
         if ($assignee === null) {

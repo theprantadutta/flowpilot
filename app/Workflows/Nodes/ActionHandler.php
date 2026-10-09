@@ -5,6 +5,7 @@ namespace App\Workflows\Nodes;
 use App\Actions\Issues\UpdateIssue;
 use App\Actions\Tasks\UpdateTask;
 use App\Enums\NodeType;
+use App\Models\Issue;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\WorkflowEmailNotification;
@@ -63,7 +64,7 @@ class ActionHandler extends BaseHandler
      */
     private function validateEmail(array $config, ValidationScope $scope): array
     {
-        $errors = People::validate($config['recipients'] ?? null, $scope->memberIds, $scope->personFields(), $scope->hasSubject());
+        $errors = People::validate($config['recipients'] ?? null, $scope->memberIds, $scope->personFields(), $scope->subjectIsWork());
         $subject = self::text($config, 'subject');
         $body = self::text($config, 'body');
 
@@ -92,8 +93,8 @@ class ActionHandler extends BaseHandler
      */
     private function validateTag(array $config, ValidationScope $scope): array
     {
-        if (! $scope->hasSubject()) {
-            return ['This trigger has no record to tag. Use a trigger about a task or an issue.'];
+        if (! $scope->subjectIsWork()) {
+            return ['Only tasks and issues can be tagged. Use a trigger about a task or an issue.'];
         }
 
         $tag = self::text($config, 'tag');
@@ -136,6 +137,11 @@ class ActionHandler extends BaseHandler
     private function addTag(array $config, StepContext $step): StepResult
     {
         $subject = $step->subjectOrFail();
+
+        if (! $subject instanceof Task && ! $subject instanceof Issue) {
+            throw StepFailed::permanent('Only tasks and issues can be tagged.');
+        }
+
         $tag = Str::of($step->render(self::text($config, 'tag'), 60))->squish()->lower()->limit(30, '')->toString();
 
         if ($tag === '') {

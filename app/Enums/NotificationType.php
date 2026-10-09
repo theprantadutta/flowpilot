@@ -18,6 +18,7 @@ enum NotificationType: string
     case WorkflowCompleted = 'workflow_completed';
     case WorkflowMessage = 'workflow_message';
     case InventoryLow = 'inventory_low';
+    case PurchaseRequestUpdated = 'purchase_request_updated';
     case MemberJoined = 'member_joined';
 
     public function label(): string
@@ -33,6 +34,7 @@ enum NotificationType: string
             self::WorkflowCompleted => 'Workflow you started finished',
             self::WorkflowMessage => 'Message sent by a workflow',
             self::InventoryLow => 'Stock below reorder point',
+            self::PurchaseRequestUpdated => 'Your purchase request moved on',
             self::MemberJoined => 'Someone joined the organization',
         };
     }
@@ -46,7 +48,7 @@ enum NotificationType: string
             self::ApprovalRequired, self::ApprovalDecided => 'Approvals',
             self::TaskAssigned, self::TaskOverdue, self::IssueAssigned, self::ProjectUpdated => 'Work',
             self::WorkflowFailed, self::WorkflowCompleted, self::WorkflowMessage => 'Workflows',
-            self::InventoryLow => 'Inventory',
+            self::InventoryLow, self::PurchaseRequestUpdated => 'Inventory',
             self::MemberJoined => 'Team',
         };
     }
@@ -59,7 +61,7 @@ enum NotificationType: string
     {
         return match ($this) {
             self::ApprovalRequired, self::ApprovalDecided, self::TaskAssigned, self::TaskOverdue,
-            self::IssueAssigned, self::WorkflowFailed, self::WorkflowMessage, self::InventoryLow => true,
+            self::IssueAssigned, self::WorkflowFailed, self::WorkflowMessage, self::InventoryLow, self::PurchaseRequestUpdated => true,
             self::ProjectUpdated, self::WorkflowCompleted, self::MemberJoined => false,
         };
     }

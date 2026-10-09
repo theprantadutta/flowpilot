@@ -5,6 +5,7 @@ import {
     Activity,
     ArrowLeftRight,
     Bell,
+    Boxes,
     CircleAlert,
     CornerDownLeft,
     FolderKanban,
@@ -17,6 +18,7 @@ import {
     Plus,
     Search,
     Settings,
+    ShoppingCart,
     Stamp,
     Sun,
     UserCog,
@@ -48,12 +50,14 @@ import { useOrganization } from '@/composables/useOrganization';
 import { overview, search as searchRoute } from '@/routes';
 import { index as activityIndex } from '@/routes/activity';
 import { index as approvalsIndex } from '@/routes/approvals';
+import { index as inventoryIndex } from '@/routes/inventory/items';
 import { index as issuesIndex } from '@/routes/issues';
 import { index as membersIndex } from '@/routes/members';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { show as organizationSettings } from '@/routes/organization-settings';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as projectsIndex } from '@/routes/projects';
+import { index as purchaseRequestsIndex } from '@/routes/purchase-requests';
 import { index as tasksIndex } from '@/routes/tasks';
 import { index as runsIndex } from '@/routes/workflow-runs';
 import { index as workflowsIndex } from '@/routes/workflows';
@@ -161,6 +165,24 @@ const commands = computed<Command[]>(() => {
                 run: () => go(approvalsIndex()),
             },
             {
+                id: 'go-inventory',
+                group: 'Go to',
+                label: 'Inventory',
+                icon: Boxes,
+                permission: 'inventory.view',
+                keywords: 'stock items parts low reorder',
+                run: () => go(inventoryIndex()),
+            },
+            {
+                id: 'go-purchase-requests',
+                group: 'Go to',
+                label: 'Purchase requests',
+                icon: ShoppingCart,
+                permission: 'inventory.request',
+                keywords: 'buy order procurement',
+                run: () => go(purchaseRequestsIndex()),
+            },
+            {
                 id: 'go-runs',
                 group: 'Go to',
                 label: 'Workflow runs',
@@ -219,6 +241,25 @@ const commands = computed<Command[]>(() => {
                             { query: { view: 'mine', create: 1 } },
                         ),
                     ),
+            },
+            {
+                id: 'create-purchase-request',
+                group: 'Actions',
+                label: 'Request a purchase',
+                icon: Plus,
+                permission: 'inventory.request',
+                keywords: 'new buy order stock',
+                run: () =>
+                    go(purchaseRequestsIndex({}, { query: { create: 1 } })),
+            },
+            {
+                id: 'create-item',
+                group: 'Actions',
+                label: 'Add stock item',
+                icon: Plus,
+                permission: 'inventory.manage',
+                keywords: 'new inventory part sku',
+                run: () => go(inventoryIndex({}, { query: { create: 1 } })),
             },
             {
                 id: 'create-workflow',

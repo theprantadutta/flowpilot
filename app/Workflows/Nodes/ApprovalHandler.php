@@ -67,7 +67,7 @@ class ApprovalHandler extends BaseHandler
         if (! is_array($approver)) {
             $errors[] = 'Choose who approves.';
         } else {
-            $errors = [...$errors, ...People::validate([$approver], $scope->memberIds, $scope->personFields(), $scope->hasSubject(), 'approvers')];
+            $errors = [...$errors, ...People::validate([$approver], $scope->memberIds, $scope->personFields(), $scope->subjectIsWork(), 'approvers')];
 
             if (($approver['type'] ?? null) === 'assignee') {
                 $errors[] = 'Choose a person, a role or a person field to approve.';

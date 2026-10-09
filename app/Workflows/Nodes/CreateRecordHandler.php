@@ -2,11 +2,13 @@
 
 namespace App\Workflows\Nodes;
 
+use App\Actions\Inventory\SubmitPurchaseRequest;
 use App\Actions\Issues\CreateIssue;
 use App\Actions\Tasks\CreateTask;
 use App\Enums\IssueSeverity;
 use App\Enums\NodeType;
 use App\Enums\Priority;
+use App\Models\InventoryItem;
 use App\Models\Project;
 use App\Workflows\Definition\ValidationScope;
 use App\Workflows\Support\People;
@@ -14,7 +16,8 @@ use App\Workflows\Support\RecordLinks;
 use Illuminate\Support\Str;
 
 /**
- * Creates a task or an issue.
+ * Creates a task or an issue, or (when the run is about a stock item) a
+ * purchase request to reorder it.
  *
  *   {
  *     record: "task" | "issue",
@@ -27,14 +30,18 @@ use Illuminate\Support\Str;
  *     due_in_days: 3 | null,
  *     tags: ["purchase"]
  *   }
+ *
+ *   { record: "purchase_request", quantity: 50 | null, reason: "…" }
+ *     A null quantity orders the item's reorder quantity.
  */
 class CreateRecordHandler extends BaseHandler
 {
-    public const array RECORDS = ['task', 'issue'];
+    public const array RECORDS = ['task', 'issue', 'purchase_request'];
 
     public function __construct(
         private readonly CreateTask $createTask,
         private readonly CreateIssue $createIssue,
+        private readonly SubmitPurchaseRequest $submitPurchaseRequest,
         private readonly People $people,
     ) {}
 
@@ -49,6 +56,10 @@ class CreateRecordHandler extends BaseHandler
 
         if (! in_array($record, self::RECORDS, true)) {
             return ['Choose whether to create a task or an issue.'];
+        }
+
+        if ($record === 'purchase_request') {
+            return $this->validatePurchaseRequest($config, $scope);
         }
 
         $errors = [];
@@ -74,13 +85,13 @@ class CreateRecordHandler extends BaseHandler
         }
 
         if (($config['assignee'] ?? null) !== null) {
-            $errors = [...$errors, ...People::validate([$config['assignee']], $scope->memberIds, $scope->personFields(), $scope->hasSubject(), 'assignees')];
+            $errors = [...$errors, ...People::validate([$config['assignee']], $scope->memberIds, $scope->personFields(), $scope->subjectIsWork(), 'assignees')];
         }
 
         $project = $config['project'] ?? null;
 
-        if ($project === 'subject' && ! $scope->hasSubject()) {
-            $errors[] = 'This trigger has no record, so there is no project to copy.';
+        if ($project === 'subject' && ! $scope->subjectIsWork()) {
+            $errors[] = 'Only tasks and issues have a project to copy.';
         } elseif (is_string($project) && $project !== 'subject' && ! in_array($project, $scope->projectIds, true)) {
             $errors[] = 'The chosen project no longer exists.';
         }
@@ -107,6 +118,11 @@ class CreateRecordHandler extends BaseHandler
     public function execute(StepContext $step): StepResult
     {
         $config = $step->config();
+
+        if (($config['record'] ?? null) === 'purchase_request') {
+            return $this->reorder($step, $config);
+        }
+
         $record = $config['record'] === 'issue' ? 'issue' : 'task';
 
         $assignee = ($config['assignee'] ?? null) !== null
@@ -143,6 +159,69 @@ class CreateRecordHandler extends BaseHandler
             'title' => $created->title,
             'url' => RecordLinks::for($created, $step->organization),
             'assignee' => $assignee?->name,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     * @return list<string>
+     */
+    private function validatePurchaseRequest(array $config, ValidationScope $scope): array
+    {
+        $errors = [];
+
+        if ($scope->subjectType() !== 'inventory_item') {
+            $errors[] = 'Purchase requests can only be raised from a trigger about a stock item, such as Stock runs low.';
+        }
+
+        $quantity = $config['quantity'] ?? null;
+
+        if ($quantity !== null && $quantity !== '' && (! is_numeric($quantity) || (int) $quantity < 1 || (int) $quantity > 1_000_000)) {
+            $errors[] = 'Order at least one.';
+        }
+
+        $reason = self::text($config, 'reason');
+
+        if (mb_strlen($reason) > 2000) {
+            $errors[] = 'Keep the reason under 2,000 characters.';
+        }
+
+        return [...$errors, ...self::templateErrors($reason, $scope, 'reason')];
+    }
+
+    /**
+     * Raise a purchase request for the stock item the run is about.
+     *
+     * @param  array<string, mixed>  $config
+     */
+    private function reorder(StepContext $step, array $config): StepResult
+    {
+        $item = $step->subjectOrFail();
+
+        if (! $item instanceof InventoryItem) {
+            throw StepFailed::permanent('Purchase requests can only be raised for stock items.');
+        }
+
+        $quantity = is_numeric($config['quantity'] ?? null) ? (int) $config['quantity'] : max(1, $item->reorder_quantity);
+
+        $request = $this->submitPurchaseRequest->handle(null, [
+            'inventory_item_id' => $item->id,
+            'item_name' => $item->name,
+            'supplier_id' => $item->supplier_id,
+            'deliver_to_location_id' => $item->default_location_id,
+            'quantity' => $quantity,
+            'unit_cost_amount' => $item->unit_cost_amount ?? 0,
+            'reason' => $step->render(self::text($config, 'reason'), 2000) ?: null,
+            // One request per run step, however often the step is retried.
+            'idempotency_key' => 'workflow:'.$step->step->id,
+        ], $step->run);
+
+        return StepResult::complete('next', [
+            'record_type' => 'purchase_request',
+            'id' => $request->id,
+            'reference' => $request->reference(),
+            'title' => $request->summary(),
+            'url' => RecordLinks::for($request, $step->organization),
         ]);
     }
 

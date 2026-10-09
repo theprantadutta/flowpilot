@@ -2,8 +2,10 @@
 
 namespace App\Workflows\Nodes;
 
+use App\Models\InventoryItem;
 use App\Models\Issue;
 use App\Models\Organization;
+use App\Models\PurchaseRequest;
 use App\Models\Task;
 use App\Models\WorkflowRun;
 use App\Models\WorkflowStepRun;
@@ -18,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
  */
 final class StepContext
 {
-    private Task|Issue|false|null $subject = false;
+    private Task|Issue|PurchaseRequest|InventoryItem|false|null $subject = false;
 
     /**
      * @param  array{id: string, type: string, position: array{x: float|int, y: float|int}, data: array{label: string, config: array<string, mixed>}}  $node
@@ -66,7 +68,7 @@ final class StepContext
     /**
      * The live record the run is about, or null when it has none or it was deleted.
      */
-    public function subject(): Task|Issue|null
+    public function subject(): Task|Issue|PurchaseRequest|InventoryItem|null
     {
         if ($this->subject !== false) {
             return $this->subject;
@@ -77,6 +79,8 @@ final class StepContext
         $subject = match ($class) {
             Task::class => Task::query()->find($this->run->subject_id),
             Issue::class => Issue::query()->find($this->run->subject_id),
+            PurchaseRequest::class => PurchaseRequest::query()->find($this->run->subject_id),
+            InventoryItem::class => InventoryItem::query()->find($this->run->subject_id),
             default => null,
         };
 
@@ -86,7 +90,7 @@ final class StepContext
     /**
      * The live record, failing the step when it is gone.
      */
-    public function subjectOrFail(): Task|Issue
+    public function subjectOrFail(): Task|Issue|PurchaseRequest|InventoryItem
     {
         return $this->subject() ?? throw StepFailed::permanent('The record this run is about has been deleted.');
     }

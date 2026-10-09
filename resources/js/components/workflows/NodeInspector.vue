@@ -76,7 +76,10 @@ const triggerOption = computed(() =>
     props.catalog.triggers.find((option) => option.value === props.trigger),
 );
 const subject = computed(() => triggerOption.value?.subject ?? null);
-const hasSubject = computed(() => subject.value !== null);
+/** Tasks and issues have an assignee, tags and a project; other records do not. */
+const subjectIsWork = computed(
+    () => subject.value === 'task' || subject.value === 'issue',
+);
 const icon = computed(() =>
     props.type === 'trigger' ? 'zap' : (typeOption.value?.icon ?? 'circle'),
 );
@@ -170,7 +173,7 @@ const assignee = computed({
 });
 
 const updateFields = computed(() =>
-    subject.value ? props.catalog.updateFields[subject.value] : [],
+    subject.value ? (props.catalog.updateFields[subject.value] ?? []) : [],
 );
 const updateField = computed(() =>
     updateFields.value.find((field) => field.value === props.config.field),
@@ -534,7 +537,7 @@ function changeTrigger(value: unknown) {
                     v-model="recipients"
                     :catalog="catalog"
                     :fields="fields"
-                    :has-subject="hasSubject"
+                    :has-subject="subjectIsWork"
                     :disabled="disabled"
                 />
             </FormField>
@@ -623,143 +626,203 @@ function changeTrigger(value: unknown) {
                     <SelectContent>
                         <SelectItem value="task">A task</SelectItem>
                         <SelectItem value="issue">An issue</SelectItem>
+                        <SelectItem
+                            v-if="subject === 'inventory_item'"
+                            value="purchase_request"
+                            >A purchase request for the item</SelectItem
+                        >
                     </SelectContent>
                 </Select>
             </FormField>
-            <FormField v-slot="field" label="Title">
-                <TemplateField
-                    v-bind="field"
-                    :model-value="text('title')"
-                    :variables="variables"
-                    :maxlength="200"
-                    :disabled="disabled"
-                    @update:model-value="(value) => set('title', value)"
-                />
-            </FormField>
-            <FormField v-slot="field" label="Description" optional>
-                <TemplateField
-                    v-bind="field"
-                    :model-value="text('description')"
-                    :variables="variables"
-                    multiline
-                    :maxlength="5000"
-                    :disabled="disabled"
-                    @update:model-value="(value) => set('description', value)"
-                />
-            </FormField>
-            <div class="grid gap-3 sm:grid-cols-2">
+            <template v-if="text('record') === 'purchase_request'">
                 <FormField
-                    v-if="text('record') !== 'issue'"
                     v-slot="field"
-                    label="Priority"
+                    label="Quantity"
+                    optional
+                    help="Leave empty to order the item's reorder quantity."
                 >
-                    <Select
-                        :model-value="text('priority') || 'medium'"
-                        :disabled="disabled"
-                        @update:model-value="(value) => set('priority', value)"
-                    >
-                        <SelectTrigger v-bind="field" class="w-full"
-                            ><SelectValue
-                        /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem
-                                v-for="option in catalog.priorities"
-                                :key="option.value"
-                                :value="option.value"
-                                >{{ option.label }}</SelectItem
-                            >
-                        </SelectContent>
-                    </Select>
-                </FormField>
-                <FormField v-else v-slot="field" label="Severity">
-                    <Select
-                        :model-value="text('severity') || 'medium'"
-                        :disabled="disabled"
-                        @update:model-value="(value) => set('severity', value)"
-                    >
-                        <SelectTrigger v-bind="field" class="w-full"
-                            ><SelectValue
-                        /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem
-                                v-for="option in catalog.severities"
-                                :key="option.value"
-                                :value="option.value"
-                                >{{ option.label }}</SelectItem
-                            >
-                        </SelectContent>
-                    </Select>
-                </FormField>
-                <FormField v-slot="field" label="Due in days" optional>
                     <Input
                         v-bind="field"
                         :model-value="
-                            config.due_in_days === null ||
-                            config.due_in_days === undefined
+                            config.quantity === null ||
+                            config.quantity === undefined
                                 ? ''
-                                : String(config.due_in_days)
+                                : String(config.quantity)
                         "
                         type="number"
-                        min="0"
-                        max="365"
+                        min="1"
                         class="figures"
                         :disabled="disabled"
                         @update:model-value="
                             (value) =>
                                 set(
-                                    'due_in_days',
+                                    'quantity',
                                     value === '' ? null : Number(value),
                                 )
                         "
                     />
                 </FormField>
-            </div>
-            <FormField v-slot="field" label="Assign to" optional>
-                <PersonPickSelect
-                    :id="field.id"
-                    v-model="assignee"
-                    :catalog="catalog"
-                    :fields="fields"
-                    :has-subject="hasSubject"
-                    none-label="Nobody yet"
-                    :disabled="disabled"
-                />
-            </FormField>
-            <FormField v-slot="field" label="Project" optional>
-                <Select v-model="project" :disabled="disabled">
-                    <SelectTrigger v-bind="field" class="w-full"
-                        ><SelectValue
-                    /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="none">No project</SelectItem>
-                        <SelectItem v-if="hasSubject" value="subject"
-                            >Same project as the {{ subject }}</SelectItem
+                <FormField v-slot="field" label="Reason" optional>
+                    <TemplateField
+                        v-bind="field"
+                        :model-value="text('reason')"
+                        :variables="variables"
+                        multiline
+                        :maxlength="2000"
+                        :disabled="disabled"
+                        @update:model-value="(value) => set('reason', value)"
+                    />
+                </FormField>
+                <p class="text-xs text-muted-foreground">
+                    The request goes to whichever workflow approves purchase
+                    requests, like one raised by a person.
+                </p>
+            </template>
+            <template v-else>
+                <FormField v-slot="field" label="Title">
+                    <TemplateField
+                        v-bind="field"
+                        :model-value="text('title')"
+                        :variables="variables"
+                        :maxlength="200"
+                        :disabled="disabled"
+                        @update:model-value="(value) => set('title', value)"
+                    />
+                </FormField>
+                <FormField v-slot="field" label="Description" optional>
+                    <TemplateField
+                        v-bind="field"
+                        :model-value="text('description')"
+                        :variables="variables"
+                        multiline
+                        :maxlength="5000"
+                        :disabled="disabled"
+                        @update:model-value="
+                            (value) => set('description', value)
+                        "
+                    />
+                </FormField>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <FormField
+                        v-if="text('record') !== 'issue'"
+                        v-slot="field"
+                        label="Priority"
+                    >
+                        <Select
+                            :model-value="text('priority') || 'medium'"
+                            :disabled="disabled"
+                            @update:model-value="
+                                (value) => set('priority', value)
+                            "
                         >
-                        <SelectItem
-                            v-for="option in catalog.projects"
-                            :key="option.id"
-                            :value="option.id"
-                            >{{ option.name }}</SelectItem
+                            <SelectTrigger v-bind="field" class="w-full"
+                                ><SelectValue
+                            /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="option in catalog.priorities"
+                                    :key="option.value"
+                                    :value="option.value"
+                                    >{{ option.label }}</SelectItem
+                                >
+                            </SelectContent>
+                        </Select>
+                    </FormField>
+                    <FormField v-else v-slot="field" label="Severity">
+                        <Select
+                            :model-value="text('severity') || 'medium'"
+                            :disabled="disabled"
+                            @update:model-value="
+                                (value) => set('severity', value)
+                            "
                         >
-                    </SelectContent>
-                </Select>
-            </FormField>
-            <FormField v-slot="field" label="Tags" optional>
-                <TagInput
-                    :id="field.id"
-                    :model-value="asArray<string>(config.tags)"
-                    @update:model-value="
-                        (value: string[]) => set('tags', value)
-                    "
-                />
-            </FormField>
+                            <SelectTrigger v-bind="field" class="w-full"
+                                ><SelectValue
+                            /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="option in catalog.severities"
+                                    :key="option.value"
+                                    :value="option.value"
+                                    >{{ option.label }}</SelectItem
+                                >
+                            </SelectContent>
+                        </Select>
+                    </FormField>
+                    <FormField v-slot="field" label="Due in days" optional>
+                        <Input
+                            v-bind="field"
+                            :model-value="
+                                config.due_in_days === null ||
+                                config.due_in_days === undefined
+                                    ? ''
+                                    : String(config.due_in_days)
+                            "
+                            type="number"
+                            min="0"
+                            max="365"
+                            class="figures"
+                            :disabled="disabled"
+                            @update:model-value="
+                                (value) =>
+                                    set(
+                                        'due_in_days',
+                                        value === '' ? null : Number(value),
+                                    )
+                            "
+                        />
+                    </FormField>
+                </div>
+                <FormField v-slot="field" label="Assign to" optional>
+                    <PersonPickSelect
+                        :id="field.id"
+                        v-model="assignee"
+                        :catalog="catalog"
+                        :fields="fields"
+                        :has-subject="subjectIsWork"
+                        none-label="Nobody yet"
+                        :disabled="disabled"
+                    />
+                </FormField>
+                <FormField v-slot="field" label="Project" optional>
+                    <Select v-model="project" :disabled="disabled">
+                        <SelectTrigger v-bind="field" class="w-full"
+                            ><SelectValue
+                        /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">No project</SelectItem>
+                            <SelectItem v-if="subjectIsWork" value="subject"
+                                >Same project as the {{ subject }}</SelectItem
+                            >
+                            <SelectItem
+                                v-for="option in catalog.projects"
+                                :key="option.id"
+                                :value="option.id"
+                                >{{ option.name }}</SelectItem
+                            >
+                        </SelectContent>
+                    </Select>
+                </FormField>
+                <FormField v-slot="field" label="Tags" optional>
+                    <TagInput
+                        :id="field.id"
+                        :model-value="asArray<string>(config.tags)"
+                        @update:model-value="
+                            (value: string[]) => set('tags', value)
+                        "
+                    />
+                </FormField>
+            </template>
         </template>
 
         <!-- Update record -->
         <template v-else-if="type === 'update_record'">
-            <p v-if="!hasSubject" class="text-sm text-muted-foreground">
-                This trigger has no record to change. Choose a trigger about a
-                task or an issue.
+            <p
+                v-if="!updateFields.length"
+                class="text-sm text-muted-foreground"
+            >
+                Workflows can change tasks, issues and purchase requests. Choose
+                a trigger about one of those.
             </p>
             <template v-else>
                 <FormField v-slot="field" label="Change">
@@ -844,8 +907,8 @@ function changeTrigger(value: unknown) {
 
         <!-- Assign -->
         <template v-else-if="type === 'assign'">
-            <p v-if="!hasSubject" class="text-sm text-muted-foreground">
-                This trigger has no record to assign. Choose a trigger about a
+            <p v-if="!subjectIsWork" class="text-sm text-muted-foreground">
+                Only tasks and issues can be assigned. Choose a trigger about a
                 task or an issue.
             </p>
             <FormField
@@ -859,7 +922,7 @@ function changeTrigger(value: unknown) {
                     v-model="assignee"
                     :catalog="catalog"
                     :fields="fields"
-                    :has-subject="hasSubject"
+                    :has-subject="subjectIsWork"
                     :disabled="disabled"
                 />
             </FormField>
@@ -910,7 +973,7 @@ function changeTrigger(value: unknown) {
                         v-model="recipients"
                         :catalog="catalog"
                         :fields="fields"
-                        :has-subject="hasSubject"
+                        :has-subject="subjectIsWork"
                         :disabled="disabled"
                     />
                 </FormField>

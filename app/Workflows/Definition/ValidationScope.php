@@ -26,9 +26,15 @@ final readonly class ValidationScope
      * Values runs about a record have, on top of the trigger's fields.
      */
     public const array SUBJECT_VARIABLES = [
+        ['path' => 'subject.url', 'label' => 'Link to the record'],
+    ];
+
+    /**
+     * Extra values for runs about a task or an issue.
+     */
+    public const array WORK_VARIABLES = [
         ['path' => 'subject.description', 'label' => 'Record description'],
         ['path' => 'subject.assignee_name', 'label' => 'Assignee name'],
-        ['path' => 'subject.url', 'label' => 'Link to the record'],
     ];
 
     /**
@@ -76,6 +82,14 @@ final readonly class ValidationScope
     }
 
     /**
+     * Tasks and issues can be assigned and tagged; other records cannot.
+     */
+    public function subjectIsWork(): bool
+    {
+        return in_array($this->subjectType(), ['task', 'issue'], true);
+    }
+
+    /**
      * @return list<string>
      */
     public function personFields(): array
@@ -100,6 +114,10 @@ final readonly class ValidationScope
         }
 
         if ($this->hasSubject() && in_array($path, array_column(self::SUBJECT_VARIABLES, 'path'), true)) {
+            return true;
+        }
+
+        if ($this->subjectIsWork() && in_array($path, array_column(self::WORK_VARIABLES, 'path'), true)) {
             return true;
         }
 

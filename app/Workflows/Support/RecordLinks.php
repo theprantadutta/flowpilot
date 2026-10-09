@@ -18,6 +18,9 @@ class RecordLinks
         'task' => ['tasks.show', 'task'],
         'issue' => ['issues.show', 'issue'],
         'workflow_run' => ['workflow-runs.show', 'run'],
+        'purchase_request' => ['purchase-requests.show', 'purchaseRequest'],
+        'inventory_item' => ['inventory.items.show', 'item'],
+        'approval' => ['approvals.show', 'approval'],
     ];
 
     public static function for(Model $record, Organization $organization): ?string

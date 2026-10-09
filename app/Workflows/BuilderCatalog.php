@@ -57,12 +57,14 @@ class BuilderCatalog
             'updateFields' => [
                 'task' => $this->fields('task'),
                 'issue' => $this->fields('issue'),
+                'purchase_request' => $this->fields('purchase_request'),
             ],
             'actions' => collect(ActionHandler::ACTIONS)->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])->values()->all(),
             'delayUnits' => array_map(fn (string $unit): array => ['value' => $unit, 'label' => ucfirst($unit)], array_keys(DelayHandler::UNITS)),
             'variables' => [
                 'common' => ValidationScope::COMMON_VARIABLES,
                 'subject' => ValidationScope::SUBJECT_VARIABLES,
+                'work' => ValidationScope::WORK_VARIABLES,
                 'steps' => ValidationScope::STEP_VARIABLES,
             ],
         ];

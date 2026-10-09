@@ -4,6 +4,9 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\InventoryItemController;
+use App\Http\Controllers\InventoryMovementController;
+use App\Http\Controllers\InventorySetupController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\IssueController;
 use App\Http\Controllers\MemberController;
@@ -11,6 +14,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationSettingsController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TaskChecklistController;
 use App\Http\Controllers\TaskController;
@@ -155,3 +159,40 @@ Route::post('approvals/{approval}/comments', [CommentController::class, 'storeFo
 Route::post('approvals/{approval}/attachments', [AttachmentController::class, 'storeForApproval'])
     ->middleware('throttle:30,1')
     ->name('approvals.attachments.store');
+
+Route::prefix('inventory')->name('inventory.')->group(function (): void {
+    Route::get('/', [InventoryItemController::class, 'index'])->name('items.index');
+    Route::post('items', [InventoryItemController::class, 'store'])
+        ->middleware('throttle:60,1')
+        ->name('items.store');
+    Route::get('items/{item}', [InventoryItemController::class, 'show'])->name('items.show');
+    Route::patch('items/{item}', [InventoryItemController::class, 'update'])->name('items.update');
+    Route::post('items/{item}/movements', [InventoryMovementController::class, 'store'])
+        ->middleware('throttle:120,1')
+        ->name('items.movements.store');
+    Route::get('movements', [InventoryMovementController::class, 'index'])->name('movements.index');
+
+    Route::get('suppliers', [InventorySetupController::class, 'suppliers'])->name('suppliers.index');
+    Route::post('suppliers', [InventorySetupController::class, 'storeSupplier'])->name('suppliers.store');
+    Route::patch('suppliers/{supplier}', [InventorySetupController::class, 'updateSupplier'])->name('suppliers.update');
+
+    Route::get('locations', [InventorySetupController::class, 'locations'])->name('locations.index');
+    Route::post('locations', [InventorySetupController::class, 'storeLocation'])->name('locations.store');
+    Route::patch('locations/{location}', [InventorySetupController::class, 'updateLocation'])->name('locations.update');
+
+    Route::post('categories', [InventorySetupController::class, 'storeCategory'])->name('categories.store');
+    Route::patch('categories/{category}', [InventorySetupController::class, 'updateCategory'])->name('categories.update');
+    Route::delete('categories/{category}', [InventorySetupController::class, 'destroyCategory'])->name('categories.destroy');
+});
+
+Route::get('purchase-requests', [PurchaseRequestController::class, 'index'])->name('purchase-requests.index');
+Route::post('purchase-requests', [PurchaseRequestController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('purchase-requests.store');
+Route::get('purchase-requests/{purchaseRequest}', [PurchaseRequestController::class, 'show'])->name('purchase-requests.show');
+Route::patch('purchase-requests/{purchaseRequest}/status', [PurchaseRequestController::class, 'updateStatus'])
+    ->middleware('throttle:60,1')
+    ->name('purchase-requests.status.update');
+Route::post('purchase-requests/{purchaseRequest}/receipts', [PurchaseRequestController::class, 'receive'])
+    ->middleware('throttle:60,1')
+    ->name('purchase-requests.receipts.store');

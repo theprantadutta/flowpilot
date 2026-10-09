@@ -21,6 +21,8 @@ class TriggerRegistry
             new TaskCreatedTrigger,
             new TaskCompletedTrigger,
             new IssueCreatedTrigger,
+            new PurchaseRequestSubmittedTrigger,
+            new InventoryLowStockTrigger,
         ] as $trigger) {
             $this->triggers[$trigger->key()] = $trigger;
         }

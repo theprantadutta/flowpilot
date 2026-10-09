@@ -2,14 +2,17 @@
 
 namespace App\Workflows\Nodes;
 
+use App\Actions\Inventory\ChangePurchaseRequestStatus;
 use App\Actions\Issues\UpdateIssue;
 use App\Actions\Tasks\UpdateTask;
 use App\Enums\IssueSeverity;
 use App\Enums\IssueStatus;
 use App\Enums\NodeType;
 use App\Enums\Priority;
+use App\Enums\PurchaseRequestStatus;
 use App\Enums\TaskStatus;
 use App\Models\Issue;
+use App\Models\PurchaseRequest;
 use App\Models\Task;
 use App\Workflows\Definition\ValidationScope;
 
@@ -23,6 +26,7 @@ class UpdateRecordHandler extends BaseHandler
     public function __construct(
         private readonly UpdateTask $updateTask,
         private readonly UpdateIssue $updateIssue,
+        private readonly ChangePurchaseRequestStatus $changePurchaseRequest,
     ) {}
 
     public function type(): NodeType
@@ -50,6 +54,12 @@ class UpdateRecordHandler extends BaseHandler
                 'severity' => ['label' => 'Severity', 'options' => self::options(IssueSeverity::options())],
                 ...$due,
             ],
+            'purchase_request' => [
+                'status' => ['label' => 'Status', 'options' => self::options(array_map(
+                    fn (PurchaseRequestStatus $status): array => $status->toOption(),
+                    [PurchaseRequestStatus::Approved, PurchaseRequestStatus::Rejected, PurchaseRequestStatus::Ordered, PurchaseRequestStatus::Cancelled],
+                ))],
+            ],
             default => [],
         };
     }
@@ -61,6 +71,11 @@ class UpdateRecordHandler extends BaseHandler
         }
 
         $fields = self::fieldsFor($scope->subjectType());
+
+        if ($fields === []) {
+            return ['Records of this kind cannot be changed by a workflow.'];
+        }
+
         $field = is_string($config['field'] ?? null) ? $config['field'] : '';
 
         if (! isset($fields[$field])) {
@@ -83,6 +98,19 @@ class UpdateRecordHandler extends BaseHandler
         $subject = $step->subjectOrFail();
         $field = (string) ($config['field'] ?? '');
         $value = $config['value'] ?? null;
+
+        if ($subject instanceof PurchaseRequest) {
+            $status = PurchaseRequestStatus::tryFrom((string) $value)
+                ?? throw StepFailed::permanent('Choose the status to set.');
+
+            $this->changePurchaseRequest->handle($subject, null, $status, automation: $step->run);
+
+            return StepResult::complete('next', ['record' => $subject->reference(), 'field' => 'Status', 'value' => $status->label()]);
+        }
+
+        if (! $subject instanceof Task && ! $subject instanceof Issue) {
+            throw StepFailed::permanent('Records of this kind cannot be changed by a workflow.');
+        }
 
         $attributes = match ($field) {
             'due_in_days' => ['due_date' => now($step->organization->timezone)->addDays((int) $value)->toDateString()],

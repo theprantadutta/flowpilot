@@ -79,6 +79,26 @@ class ActivityPresenter
             'approval.withdrawn' => "withdrew {$this->workItem($properties, $log)}",
             'approval.expired' => "let {$this->workItem($properties, $log)} expire because nobody decided in time",
             'approval.commented' => "commented on {$this->workItem($properties, $log)}",
+            'inventory.item_created' => "added {$this->stockItem($properties, $log)} to inventory",
+            'inventory.item_updated' => "updated {$this->stockItem($properties, $log)}",
+            'inventory.item_archived' => "archived {$this->stockItem($properties, $log)}",
+            'inventory.receipt' => sprintf('received %s of %s (%s on hand)', $this->string($properties, 'quantity') ?? 'stock', $this->stockItem($properties, $log), $this->string($properties, 'stock_after') ?? 'new total'),
+            'inventory.issue' => sprintf('issued %s of %s (%s left)', $this->string($properties, 'quantity') ?? 'stock', $this->stockItem($properties, $log), $this->string($properties, 'stock_after') ?? 'new total'),
+            'inventory.adjustment' => sprintf('corrected the count of %s by %s (%s on hand)', $this->stockItem($properties, $log), $this->string($properties, 'quantity') ?? 'some', $this->string($properties, 'stock_after') ?? 'new total'),
+            'inventory.transfer' => sprintf('moved %s of %s between locations', $this->string($properties, 'quantity') ?? 'stock', $this->stockItem($properties, $log)),
+            'inventory.supplier_created' => "added the supplier {$this->subjectName($log, $properties)}",
+            'inventory.supplier_updated' => "updated the supplier {$this->subjectName($log, $properties)}",
+            'inventory.location_created' => "added the location {$this->subjectName($log, $properties)}",
+            'inventory.location_updated' => "updated the location {$this->subjectName($log, $properties)}",
+            'inventory.category_created' => "added the category {$this->subjectName($log, $properties)}",
+            'inventory.category_updated' => "renamed the category {$this->subjectName($log, $properties)}",
+            'purchase_request.submitted' => "asked to buy {$this->workItem($properties, $log)}",
+            'purchase_request.approved' => "approved {$this->workItem($properties, $log)}",
+            'purchase_request.rejected' => "did not approve {$this->workItem($properties, $log)}",
+            'purchase_request.ordered' => "ordered {$this->workItem($properties, $log)}",
+            'purchase_request.partly_received' => "received part of {$this->workItem($properties, $log)}",
+            'purchase_request.received' => "received {$this->workItem($properties, $log)}",
+            'purchase_request.cancelled' => "cancelled {$this->workItem($properties, $log)}",
             'settings.webhook_secret_viewed' => 'revealed the webhook signing secret',
             'settings.webhook_secret_rotated' => 'replaced the webhook signing secret',
             'workflow.created' => "created the workflow {$this->subjectName($log, $properties)}",
@@ -164,6 +184,7 @@ class ActivityPresenter
             'issue' => 'alert-triangle',
             'workflow' => 'git-branch',
             'approval' => 'stamp',
+            'purchase_request' => 'truck',
             'inventory' => 'package',
             'ai' => 'sparkles',
             'file' => 'paperclip',
@@ -205,6 +226,19 @@ class ActivityPresenter
         $title = $this->string($properties, 'title') ?? $log->subject_label ?? 'an item';
 
         return $reference ? "{$reference} {$title}" : $title;
+    }
+
+    /**
+     * "SKU-123 Nitrile gloves".
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    private function stockItem(array $properties, ActivityLog $log): string
+    {
+        $sku = $this->string($properties, 'sku');
+        $name = $this->string($properties, 'name') ?? $log->subject_label ?? 'an item';
+
+        return $sku ? "{$sku} {$name}" : $name;
     }
 
     /**

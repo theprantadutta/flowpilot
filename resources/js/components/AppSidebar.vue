@@ -2,12 +2,14 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     Activity,
+    Boxes,
     CircleAlert,
     FolderKanban,
     GitBranch,
     LayoutDashboard,
     ListChecks,
     Settings,
+    ShoppingCart,
     Stamp,
     Users,
 } from '@lucide/vue';
@@ -33,10 +35,12 @@ import { useOrganization } from '@/composables/useOrganization';
 import { dashboard, overview } from '@/routes';
 import { index as activity } from '@/routes/activity';
 import { index as approvals } from '@/routes/approvals';
+import { index as inventory } from '@/routes/inventory/items';
 import { index as issues } from '@/routes/issues';
 import { index as members } from '@/routes/members';
 import { show as organizationSettings } from '@/routes/organization-settings';
 import { index as projects } from '@/routes/projects';
+import { index as purchaseRequests } from '@/routes/purchase-requests';
 import { index as tasks } from '@/routes/tasks';
 import { index as workflowRuns } from '@/routes/workflow-runs';
 import { index as workflows } from '@/routes/workflows';
@@ -85,6 +89,23 @@ const groups = computed<NavGroup[]>(() => {
                     permission: 'issues.view',
                     matchPrefix: true,
                 },
+                can('inventory.view')
+                    ? {
+                          title: 'Inventory',
+                          href: inventory(),
+                          icon: Boxes,
+                          permission: 'inventory.view',
+                          matchPrefix: true,
+                          alsoMatches: [purchaseRequests()],
+                      }
+                    : {
+                          // Members who may ask to buy things but not see stock.
+                          title: 'Purchase requests',
+                          href: purchaseRequests(),
+                          icon: ShoppingCart,
+                          permission: 'inventory.request',
+                          matchPrefix: true,
+                      },
             ],
         },
         {

@@ -16,6 +16,7 @@ class WorkflowTemplates
         return [
             $this->blank(),
             $this->purchaseApproval(),
+            $this->lowStockReorder(),
             $this->leaveRequest(),
             $this->expenseApproval(),
             $this->criticalIssueEscalation(),
@@ -83,8 +84,8 @@ class WorkflowTemplates
     }
 
     /**
-     * The flagship flow: manager approval, finance for anything over 5,000,
-     * then procurement orders it.
+     * The flagship flow: a manager approves every purchase request, finance
+     * also approves anything over 5,000, then procurement orders it.
      *
      * @return array{key: string, name: string, description: string, category: string, trigger: string, definition: array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}}
      */
@@ -93,77 +94,96 @@ class WorkflowTemplates
         return [
             'key' => 'purchase-approval',
             'name' => 'Purchase approval',
-            'description' => 'A manager approves every purchase, finance also approves anything over 5,000, then procurement is asked to order it.',
+            'description' => 'A manager approves every purchase request, finance also approves anything over 5,000, then procurement is asked to order it.',
             'category' => 'Finance',
-            'trigger' => 'manual',
+            'trigger' => 'purchase_request.submitted',
             'definition' => [
                 'nodes' => [
-                    self::node('trigger', 'trigger', 'Purchase requested', 0, 0, [
-                        'inputs' => [
-                            ['key' => 'item', 'label' => 'Item', 'type' => 'text', 'required' => true, 'options' => []],
-                            ['key' => 'quantity', 'label' => 'Quantity', 'type' => 'number', 'required' => true, 'options' => []],
-                            ['key' => 'amount', 'label' => 'Total amount', 'type' => 'money', 'required' => true, 'options' => []],
-                            ['key' => 'supplier', 'label' => 'Supplier', 'type' => 'text', 'required' => true, 'options' => []],
-                            ['key' => 'needed_by', 'label' => 'Needed by', 'type' => 'date', 'required' => true, 'options' => []],
-                            ['key' => 'reason', 'label' => 'Why it is needed', 'type' => 'text', 'required' => false, 'options' => []],
-                        ],
-                    ]),
+                    self::node('trigger', 'trigger', 'Purchase requested', 0, 0),
                     self::node('manager_approval', 'approval', 'Manager approval', 0, 160, [
-                        'title' => 'Purchase: {{ input.quantity }} × {{ input.item }}',
-                        'description' => 'From {{ input.supplier }}, needed by {{ input.needed_by }}. {{ input.reason }}',
+                        'title' => '{{ subject.reference }}: {{ subject.quantity }} × {{ subject.item }}',
+                        'description' => 'Supplier: {{ subject.supplier }}. Needed by {{ subject.needed_by }}. {{ subject.reason }}',
                         'approver' => ['type' => 'role', 'role' => 'manager'],
-                        'amount_field' => 'input.amount',
+                        'amount_field' => 'subject.amount',
                         'priority' => 'medium',
                         'due_in_hours' => 48,
                         'when_overdue' => 'remind',
                     ]),
                     self::node('over_limit', 'condition', 'Over 5,000?', -240, 330, [
                         'match' => 'all',
-                        'rules' => [['field' => 'input.amount', 'operator' => 'greater_than', 'value' => '5000']],
+                        'rules' => [['field' => 'subject.amount', 'operator' => 'greater_than', 'value' => '5000']],
                     ]),
                     self::node('finance_approval', 'approval', 'Finance approval', -480, 500, [
-                        'title' => 'Finance check: {{ input.item }} ({{ input.amount }})',
-                        'description' => 'Approved by {{ steps.manager_approval.decided_by }}. From {{ input.supplier }}, needed by {{ input.needed_by }}.',
+                        'title' => 'Finance check: {{ subject.reference }} ({{ subject.amount }})',
+                        'description' => 'Approved by {{ steps.manager_approval.decided_by }}. {{ subject.quantity }} × {{ subject.item }} from {{ subject.supplier }}.',
                         'approver' => ['type' => 'role', 'role' => 'finance'],
-                        'amount_field' => 'input.amount',
+                        'amount_field' => 'subject.amount',
                         'priority' => 'high',
                         'due_in_hours' => 48,
                         'when_overdue' => 'remind',
                     ]),
-                    self::node('order_task', 'create_record', 'Ask procurement to order', -240, 680, [
-                        'record' => 'task',
-                        'title' => 'Order {{ input.quantity }} × {{ input.item }} from {{ input.supplier }}',
-                        'description' => 'Approved purchase of {{ input.amount }}, needed by {{ input.needed_by }}. Requested by {{ actor.name }}.',
-                        'priority' => 'high',
-                        'assignee' => ['type' => 'role', 'role' => 'procurement'],
-                        'project' => null,
-                        'due_in_days' => 2,
-                        'tags' => ['purchase'],
+                    self::node('mark_approved', 'update_record', 'Mark approved', -240, 680, [
+                        'field' => 'status',
+                        'value' => 'approved',
                     ]),
-                    self::node('tell_approved', 'notification', 'Tell the requester', -240, 850, [
-                        'recipients' => [['type' => 'starter']],
-                        'title' => 'Your purchase of {{ input.item }} is approved',
-                        'message' => 'Procurement will order it: {{ steps.order_task.reference }}.',
+                    self::node('tell_procurement', 'notification', 'Ask procurement to order', -240, 850, [
+                        'recipients' => [['type' => 'role', 'role' => 'procurement']],
+                        'title' => 'Order {{ subject.reference }}: {{ subject.quantity }} × {{ subject.item }}',
+                        'message' => 'Approved for {{ subject.amount }}. Supplier: {{ subject.supplier }}. Needed by {{ subject.needed_by }}.',
                     ]),
                     self::node('approved', 'end', 'Approved', -240, 1020, ['summary' => 'Approved and sent to procurement']),
-                    self::node('tell_rejected', 'notification', 'Tell the requester', 260, 500, [
-                        'recipients' => [['type' => 'starter']],
-                        'title' => 'Your purchase of {{ input.item }} was not approved',
-                        'message' => 'Open the request to see the reason.',
+                    self::node('mark_rejected', 'update_record', 'Mark not approved', 260, 500, [
+                        'field' => 'status',
+                        'value' => 'rejected',
                     ]),
                     self::node('rejected', 'end', 'Not approved', 260, 680, ['summary' => 'Not approved']),
                 ],
                 'edges' => [
                     self::edge('trigger', 'manager_approval'),
                     self::edge('manager_approval', 'over_limit', 'approved'),
-                    self::edge('manager_approval', 'tell_rejected', 'rejected'),
+                    self::edge('manager_approval', 'mark_rejected', 'rejected'),
                     self::edge('over_limit', 'finance_approval', 'true'),
-                    self::edge('over_limit', 'order_task', 'false'),
-                    self::edge('finance_approval', 'order_task', 'approved'),
-                    self::edge('finance_approval', 'tell_rejected', 'rejected'),
-                    self::edge('order_task', 'tell_approved'),
-                    self::edge('tell_approved', 'approved'),
-                    self::edge('tell_rejected', 'rejected'),
+                    self::edge('over_limit', 'mark_approved', 'false'),
+                    self::edge('finance_approval', 'mark_approved', 'approved'),
+                    self::edge('finance_approval', 'mark_rejected', 'rejected'),
+                    self::edge('mark_approved', 'tell_procurement'),
+                    self::edge('tell_procurement', 'approved'),
+                    self::edge('mark_rejected', 'rejected'),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array{key: string, name: string, description: string, category: string, trigger: string, definition: array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}}
+     */
+    private function lowStockReorder(): array
+    {
+        return [
+            'key' => 'low-stock-reorder',
+            'name' => 'Low stock alert',
+            'description' => 'When an item drops to its reorder point, warn procurement and raise a purchase request for the reorder quantity.',
+            'category' => 'Inventory',
+            'trigger' => 'inventory.low_stock',
+            'definition' => [
+                'nodes' => [
+                    self::node('trigger', 'trigger', 'Stock runs low', 0, 0),
+                    self::node('tell_procurement', 'notification', 'Warn procurement', 0, 160, [
+                        'recipients' => [['type' => 'role', 'role' => 'procurement']],
+                        'title' => 'Low stock: {{ subject.name }}',
+                        'message' => '{{ subject.sku }} is down to {{ subject.current_stock }}, at or below its reorder point of {{ subject.reorder_point }}. A purchase request has been raised.',
+                    ]),
+                    self::node('reorder', 'create_record', 'Raise a purchase request', 0, 320, [
+                        'record' => 'purchase_request',
+                        'quantity' => null,
+                        'reason' => 'Automatic reorder: stock fell to {{ subject.current_stock }} (reorder point {{ subject.reorder_point }}).',
+                    ]),
+                    self::node('done', 'end', 'Reorder raised', 0, 480, ['summary' => 'Purchase request {{ steps.reorder.reference }} raised']),
+                ],
+                'edges' => [
+                    self::edge('trigger', 'tell_procurement'),
+                    self::edge('tell_procurement', 'reorder'),
+                    self::edge('reorder', 'done'),
                 ],
             ],
         ];

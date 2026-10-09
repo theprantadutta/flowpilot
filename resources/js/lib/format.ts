@@ -89,6 +89,27 @@ export function formatMoney(
     }).format(minorUnits / divisor);
 }
 
+/**
+ * Typed money text to integer minor units: "1,250.5" USD → 125050. Returns
+ * null for anything that is not a plain amount. Only used for previews; the
+ * server parses the text it is sent.
+ */
+export function parseMoney(input: string, currency = 'USD'): number | null {
+    const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(
+        input.trim().replace(/,/g, ''),
+    );
+
+    if (!match) {
+        return null;
+    }
+
+    if (ZERO_DECIMAL_CURRENCIES.has(currency)) {
+        return match[2] ? null : Number(match[1]);
+    }
+
+    return Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
+}
+
 export function formatNumber(
     value: number | null | undefined,
     options: Intl.NumberFormatOptions = {},

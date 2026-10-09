@@ -26,7 +26,7 @@ class NotificationHandler extends BaseHandler
 
     public function validate(array $config, ValidationScope $scope): array
     {
-        $errors = People::validate($config['recipients'] ?? null, $scope->memberIds, $scope->personFields(), $scope->hasSubject());
+        $errors = People::validate($config['recipients'] ?? null, $scope->memberIds, $scope->personFields(), $scope->subjectIsWork());
         $title = self::text($config, 'title');
         $message = self::text($config, 'message');
 

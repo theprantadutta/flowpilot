@@ -30,7 +30,7 @@ export type TriggerOption = {
     value: string;
     label: string;
     description: string;
-    subject: 'task' | 'issue' | null;
+    subject: 'task' | 'issue' | 'purchase_request' | 'inventory_item' | null;
     fields: WorkflowField[];
 };
 
@@ -163,15 +163,18 @@ export type BuilderCatalog = {
     projects: ProjectOption[];
     priorities: Option[];
     severities: Option[];
-    updateFields: Record<
-        'task' | 'issue',
-        { value: string; label: string; options: Option[] | null }[]
+    updateFields: Partial<
+        Record<
+            string,
+            { value: string; label: string; options: Option[] | null }[]
+        >
     >;
     actions: Option[];
     delayUnits: Option[];
     variables: {
         common: VariableOption[];
         subject: VariableOption[];
+        work: VariableOption[];
         steps: Record<string, { key: string; label: string }[]>;
     };
 };
