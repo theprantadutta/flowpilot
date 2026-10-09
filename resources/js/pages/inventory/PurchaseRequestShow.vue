@@ -317,6 +317,13 @@ const outcome = computed(() => {
                 Waiting for approval through a workflow. The approvers are
                 notified and decide from their approvals inbox.
             </p>
+            <p
+                v-else-if="purchase.status.value === 'submitted'"
+                class="rounded-lg bg-warning-soft px-4 py-3 text-sm text-warning-text"
+            >
+                Waiting for someone who manages inventory to approve it. They
+                have been notified. Nobody approves their own request.
+            </p>
 
             <form
                 v-if="can.order"

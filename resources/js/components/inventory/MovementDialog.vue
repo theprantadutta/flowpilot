@@ -100,6 +100,13 @@ const descriptions: Record<MovementKind, string> = {
         'Enter what you counted. The difference is booked and kept in the audit trail.',
 };
 
+const referenceHints: Record<MovementKind, string> = {
+    receipt: 'Delivery note or PO number',
+    issue: 'Work order or job',
+    transfer: 'Transfer note',
+    adjustment: 'Count sheet',
+};
+
 const atLocation = computed(() => {
     const id =
         props.kind === 'transfer' ? form.from_location_id : form.location_id;
@@ -301,11 +308,7 @@ function submit() {
                             v-bind="field"
                             v-model="form.reference"
                             maxlength="80"
-                            :placeholder="
-                                kind === 'issue'
-                                    ? 'Work order or job'
-                                    : 'Count sheet'
-                            "
+                            :placeholder="referenceHints[kind]"
                         />
                     </FormField>
                 </div>
