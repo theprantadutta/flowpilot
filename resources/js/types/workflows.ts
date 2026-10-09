@@ -48,6 +48,7 @@ export type NodeKind =
     | 'trigger'
     | 'condition'
     | 'branch'
+    | 'approval'
     | 'action'
     | 'notification'
     | 'delay'

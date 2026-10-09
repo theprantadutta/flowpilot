@@ -2,6 +2,7 @@
 
 namespace App\Workflows\Engine;
 
+use App\Enums\ApprovalStatus;
 use App\Enums\MembershipStatus;
 use App\Enums\NodeType;
 use App\Enums\Permission;
@@ -9,6 +10,7 @@ use App\Enums\Role;
 use App\Enums\StepRunStatus;
 use App\Enums\WorkflowRunStatus;
 use App\Jobs\AdvanceWorkflowRun;
+use App\Models\Approval;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
@@ -217,6 +219,12 @@ class WorkflowEngine
             $run->steps()
                 ->whereIn('status', [StepRunStatus::Pending->value, StepRunStatus::Running->value, StepRunStatus::Waiting->value])
                 ->update(['status' => StepRunStatus::Cancelled->value, 'resume_at' => null, 'completed_at' => now()]);
+
+            // Requests the run was waiting on no longer need a decision.
+            Approval::query()
+                ->where('workflow_run_id', $run->id)
+                ->whereIn('status', ApprovalStatus::openValues())
+                ->update(['status' => ApprovalStatus::Cancelled->value, 'decided_at' => now()]);
 
             $run->forceFill([
                 'status' => WorkflowRunStatus::Cancelled,

@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Permission;
+use App\Models\Approval;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
@@ -63,6 +65,7 @@ class HandleInertiaRequests extends Middleware
             // organization is only known once the page is rendered.
             'organization' => fn (): ?array => $this->currentOrganization(),
             'unreadNotifications' => fn (): int => $this->unreadNotifications($user),
+            'pendingApprovals' => fn (): int => $this->pendingApprovals($user),
             'organizations' => fn (): array => $user instanceof User
                 ? $user->usableMemberships()
                     ->map(fn (OrganizationMembership $membership): array => [
@@ -76,6 +79,28 @@ class HandleInertiaRequests extends Middleware
                 : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * Requests waiting on the signed-in member's decision, for the sidebar badge.
+     */
+    private function pendingApprovals(mixed $user): int
+    {
+        $tenancy = app(Tenancy::class);
+        $membership = $tenancy->membership();
+
+        if (! $user instanceof User || $membership === null) {
+            return 0;
+        }
+
+        if (! $membership->allows(Permission::ApprovalsApprove) && ! $membership->allows(Permission::ApprovalsReject)) {
+            return 0;
+        }
+
+        return Approval::query()
+            ->waitingOn($user, $membership)
+            ->where(fn ($query) => $query->whereNull('requester_id')->orWhere('requester_id', '!=', $user->id))
+            ->count();
     }
 
     private function unreadNotifications(mixed $user): int

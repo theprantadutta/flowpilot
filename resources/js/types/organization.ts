@@ -20,6 +20,8 @@ export type Permission =
     | 'approvals.view'
     | 'approvals.approve'
     | 'approvals.reject'
+    | 'approvals.override'
+    | 'approvals.request'
     | 'inventory.view'
     | 'inventory.manage'
     | 'inventory.request'

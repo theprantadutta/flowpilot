@@ -4,12 +4,10 @@ namespace App\Workflows\Support;
 
 use App\Models\Organization;
 use App\Models\User;
-use App\Support\Currencies;
 use App\Support\Money;
 use App\Workflows\Fields\Field;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Number;
 use Throwable;
 
 /**
@@ -77,18 +75,7 @@ class TemplateRenderer
 
     private function money(string|int|float|bool $value, string $currency, string $locale): string
     {
-        if (! is_numeric($value)) {
-            return (string) $value;
-        }
-
-        $decimal = Money::toDecimalString((int) $value, $currency) ?? '0';
-
-        try {
-            // Formatting only: the stored amount stays in integer minor units.
-            return Number::currency((float) $decimal, $currency, $locale, Currencies::decimals($currency)) ?: "{$currency} {$decimal}";
-        } catch (Throwable) {
-            return "{$currency} {$decimal}";
-        }
+        return is_numeric($value) ? Money::format((int) $value, $currency, $locale) : (string) $value;
     }
 
     private function date(string $value, string $format): string

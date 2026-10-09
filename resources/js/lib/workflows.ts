@@ -101,6 +101,16 @@ export function defaultConfig(type: NodeKind): NodeConfig {
             return { url: '', fields: [] };
         case 'end':
             return { summary: '' };
+        case 'approval':
+            return {
+                title: '',
+                description: '',
+                approver: { type: 'role', role: 'manager' },
+                amount_field: null,
+                priority: 'medium',
+                due_in_hours: 48,
+                when_overdue: 'remind',
+            };
         default:
             return {};
     }
@@ -346,6 +356,17 @@ export function describeNode(
         }
         case 'end':
             return asString(config.summary) || 'Run finishes';
+        case 'approval': {
+            const pick = config.approver as PersonPick | null;
+
+            if (!pick) {
+                return 'Choose who approves';
+            }
+
+            return pick.type === 'role'
+                ? `Anyone in ${catalog.roles.find((role) => role.value === pick.role)?.label ?? pick.role} decides`
+                : `${personLabel(pick, catalog, fields)} decides`;
+        }
     }
 }
 

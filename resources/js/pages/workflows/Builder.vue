@@ -135,6 +135,8 @@ setLayoutProps({
 
 const FLOW_ID = 'workflow-builder';
 const compact = useMediaQuery('(max-width: 1023px)');
+// The overview map only earns its space when the canvas is wide.
+const roomy = useMediaQuery('(min-width: 1536px)');
 const editable = computed(() => props.can.update && !compact.value);
 
 const nodeTypes = Object.fromEntries(
@@ -1034,11 +1036,14 @@ const issueCount = computed(() => props.issues.length);
                         position="bottom-left"
                     />
                     <MiniMap
-                        v-if="!compact"
+                        v-if="roomy"
                         pannable
                         zoomable
                         position="bottom-right"
+                        :width="150"
+                        :height="96"
                         :node-border-radius="12"
+                        aria-label="Overview of the canvas"
                     />
                     <Panel
                         v-if="selectedEdgeId && editable"

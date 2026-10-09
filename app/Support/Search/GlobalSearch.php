@@ -4,6 +4,7 @@ namespace App\Support\Search;
 
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Support\Search\Sources\ApprovalSearchSource;
 use App\Support\Search\Sources\IssueSearchSource;
 use App\Support\Search\Sources\MemberSearchSource;
 use App\Support\Search\Sources\ProjectSearchSource;
@@ -22,6 +23,7 @@ class GlobalSearch
         ProjectSearchSource::class,
         TaskSearchSource::class,
         IssueSearchSource::class,
+        ApprovalSearchSource::class,
         WorkflowSearchSource::class,
         MemberSearchSource::class,
     ];

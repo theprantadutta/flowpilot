@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Enums\Permission;
 use App\Models\ActivityLog;
+use App\Models\Approval;
 use App\Models\Attachment;
 use App\Models\Comment;
 use App\Models\Invitation;
@@ -74,7 +75,7 @@ class AppServiceProvider extends ServiceProvider
         // Record ids are UUIDs. Anything else is a 404 before it reaches the
         // database (PostgreSQL rejects malformed UUIDs with an error).
         Route::patterns(array_fill_keys(
-            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run'],
+            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval'],
             '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
         ));
 
@@ -138,6 +139,7 @@ class AppServiceProvider extends ServiceProvider
             'workflow_run' => WorkflowRun::class,
             'workflow_step_run' => WorkflowStepRun::class,
             'webhook_delivery' => WebhookDelivery::class,
+            'approval' => Approval::class,
         ]);
     }
 

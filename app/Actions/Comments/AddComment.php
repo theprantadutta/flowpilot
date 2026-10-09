@@ -2,6 +2,7 @@
 
 namespace App\Actions\Comments;
 
+use App\Models\Approval;
 use App\Models\Comment;
 use App\Models\Issue;
 use App\Models\Task;
@@ -13,7 +14,7 @@ class AddComment
 {
     public function __construct(private readonly ActivityLogger $activity) {}
 
-    public function handle(Task|Issue $commentable, User $author, string $body): Comment
+    public function handle(Task|Issue|Approval $commentable, User $author, string $body): Comment
     {
         $comment = $commentable->comments()->create([
             'author_id' => $author->id,
@@ -24,7 +25,7 @@ class AddComment
             'title' => $commentable->title,
             'reference' => $commentable->reference(),
             'excerpt' => Str::limit($body, 140),
-        ], context: $commentable->project, actor: $author);
+        ], context: $commentable instanceof Approval ? null : $commentable->project, actor: $author);
 
         return $comment;
     }

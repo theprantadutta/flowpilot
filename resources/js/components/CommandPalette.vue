@@ -17,6 +17,7 @@ import {
     Plus,
     Search,
     Settings,
+    Stamp,
     Sun,
     UserCog,
     Users,
@@ -46,6 +47,7 @@ import {
 import { useOrganization } from '@/composables/useOrganization';
 import { overview, search as searchRoute } from '@/routes';
 import { index as activityIndex } from '@/routes/activity';
+import { index as approvalsIndex } from '@/routes/approvals';
 import { index as issuesIndex } from '@/routes/issues';
 import { index as membersIndex } from '@/routes/members';
 import { index as notificationsIndex } from '@/routes/notifications';
@@ -150,6 +152,15 @@ const commands = computed<Command[]>(() => {
                 run: () => go(workflowsIndex()),
             },
             {
+                id: 'go-approvals',
+                group: 'Go to',
+                label: 'Approvals',
+                icon: Stamp,
+                permission: 'approvals.view',
+                keywords: 'decisions requests waiting',
+                run: () => go(approvalsIndex()),
+            },
+            {
                 id: 'go-runs',
                 group: 'Go to',
                 label: 'Workflow runs',
@@ -193,6 +204,21 @@ const commands = computed<Command[]>(() => {
                 permission: 'issues.create',
                 keywords: 'new problem bug',
                 run: () => go(issuesIndex({}, { query: { create: 1 } })),
+            },
+            {
+                id: 'create-approval',
+                group: 'Actions',
+                label: 'Request an approval',
+                icon: Plus,
+                permission: 'approvals.request',
+                keywords: 'new purchase expense leave',
+                run: () =>
+                    go(
+                        approvalsIndex(
+                            {},
+                            { query: { view: 'mine', create: 1 } },
+                        ),
+                    ),
             },
             {
                 id: 'create-workflow',

@@ -71,6 +71,14 @@ class ActivityPresenter
             'settings.updated' => 'updated the '.($this->string($properties, 'section') ?? 'organization').' settings',
             'settings.logo_updated' => 'uploaded a new logo',
             'settings.logo_removed' => 'removed the logo',
+            'approval.requested' => sprintf('asked %s to approve %s', $this->string($properties, 'approver') ?? 'someone', $this->workItem($properties, $log)),
+            'approval.approved' => "approved {$this->workItem($properties, $log)}".$this->onBehalf($properties),
+            'approval.rejected' => "rejected {$this->workItem($properties, $log)}".$this->onBehalf($properties),
+            'approval.changes_requested' => "asked for changes to {$this->workItem($properties, $log)}".$this->onBehalf($properties),
+            'approval.resubmitted' => "resubmitted {$this->workItem($properties, $log)}",
+            'approval.withdrawn' => "withdrew {$this->workItem($properties, $log)}",
+            'approval.expired' => "let {$this->workItem($properties, $log)} expire because nobody decided in time",
+            'approval.commented' => "commented on {$this->workItem($properties, $log)}",
             'settings.webhook_secret_viewed' => 'revealed the webhook signing secret',
             'settings.webhook_secret_rotated' => 'replaced the webhook signing secret',
             'workflow.created' => "created the workflow {$this->subjectName($log, $properties)}",
@@ -197,6 +205,18 @@ class ActivityPresenter
         $title = $this->string($properties, 'title') ?? $log->subject_label ?? 'an item';
 
         return $reference ? "{$reference} {$title}" : $title;
+    }
+
+    /**
+     * ", for Priya Nair" when someone decided on another person's behalf.
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    private function onBehalf(array $properties): string
+    {
+        $name = $this->string($properties, 'on_behalf');
+
+        return $name ? " on behalf of {$name}" : '';
     }
 
     /**

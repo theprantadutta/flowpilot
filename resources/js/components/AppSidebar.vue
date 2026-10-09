@@ -8,6 +8,7 @@ import {
     LayoutDashboard,
     ListChecks,
     Settings,
+    Stamp,
     Users,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -31,6 +32,7 @@ import {
 import { useOrganization } from '@/composables/useOrganization';
 import { dashboard, overview } from '@/routes';
 import { index as activity } from '@/routes/activity';
+import { index as approvals } from '@/routes/approvals';
 import { index as issues } from '@/routes/issues';
 import { index as members } from '@/routes/members';
 import { show as organizationSettings } from '@/routes/organization-settings';
@@ -95,6 +97,14 @@ const groups = computed<NavGroup[]>(() => {
                     permission: 'workflows.view',
                     matchPrefix: true,
                     alsoMatches: [workflowRuns()],
+                },
+                {
+                    title: 'Approvals',
+                    href: approvals(),
+                    icon: Stamp,
+                    permission: 'approvals.view',
+                    matchPrefix: true,
+                    badge: page.props.pendingApprovals || undefined,
                 },
             ],
         },

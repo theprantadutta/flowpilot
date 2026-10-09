@@ -112,6 +112,23 @@ const lines = computed<{ label: string; value: string }[]>(() => {
                 });
             }
             break;
+        case 'approval':
+            list.push({ label: 'Asks', value: asString(c.title) });
+            list.push({
+                label: 'Approver',
+                value: describePicks(
+                    c.approver ? [c.approver] : [],
+                    props.catalog,
+                    props.fields,
+                ),
+            });
+            if (c.due_in_hours !== null && c.due_in_hours !== undefined) {
+                list.push({
+                    label: 'Due',
+                    value: `${c.due_in_hours} hours after asking, then ${c.when_overdue === 'reject' ? 'rejected' : 'a reminder'}`,
+                });
+            }
+            break;
         case 'webhook':
             list.push({
                 label: 'Address',

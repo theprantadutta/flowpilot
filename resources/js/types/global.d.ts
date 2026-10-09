@@ -26,6 +26,7 @@ declare module '@inertiajs/core' {
             /** Set on pages inside an organization (/app/{organization}/…). */
             organization: CurrentOrganization | null;
             organizations: OrganizationSummary[];
+            pendingApprovals?: number;
             unreadNotifications: number;
             sidebarOpen: boolean;
             [key: string]: unknown;

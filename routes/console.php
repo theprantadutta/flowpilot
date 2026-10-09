@@ -18,3 +18,9 @@ Schedule::command('workflows:resume')
     ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();
+
+// Overdue approvals: expire the ones set to reject when overdue, remind approvers about the rest.
+Schedule::command('approvals:check-overdue')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();

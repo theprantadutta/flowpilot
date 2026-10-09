@@ -11,6 +11,7 @@ enum NodeType: string
     case Trigger = 'trigger';
     case Condition = 'condition';
     case Branch = 'branch';
+    case Approval = 'approval';
     case Action = 'action';
     case Notification = 'notification';
     case Delay = 'delay';
@@ -26,6 +27,7 @@ enum NodeType: string
             self::Trigger => 'Trigger',
             self::Condition => 'Condition',
             self::Branch => 'Branch',
+            self::Approval => 'Approval',
             self::Action => 'Action',
             self::Notification => 'Notification',
             self::Delay => 'Delay',
@@ -43,6 +45,7 @@ enum NodeType: string
             self::Trigger => 'What starts the workflow.',
             self::Condition => 'Go one way if the rules match, another way if not.',
             self::Branch => 'Choose one of several paths by matching cases in order.',
+            self::Approval => 'Ask someone to approve or reject, and wait for their decision.',
             self::Action => 'Send an email, tag the record or raise an issue.',
             self::Notification => 'Tell people in FlowPilot (and by email if they want).',
             self::Delay => 'Wait for a set time before continuing.',
@@ -60,6 +63,7 @@ enum NodeType: string
             self::Trigger => 'zap',
             self::Condition => 'git-fork',
             self::Branch => 'split',
+            self::Approval => 'stamp',
             self::Action => 'square-play',
             self::Notification => 'bell',
             self::Delay => 'hourglass',
@@ -76,6 +80,7 @@ enum NodeType: string
         return match ($this) {
             self::Trigger => 'flow',
             self::Condition, self::Branch => 'info',
+            self::Approval => 'warning',
             self::Delay => 'neutral',
             self::End => 'success',
             default => 'info',
@@ -92,6 +97,7 @@ enum NodeType: string
     {
         return match ($this) {
             self::Condition => [['id' => 'true', 'label' => 'Yes'], ['id' => 'false', 'label' => 'No']],
+            self::Approval => [['id' => 'approved', 'label' => 'Approved'], ['id' => 'rejected', 'label' => 'Rejected']],
             self::Branch => [['id' => 'otherwise', 'label' => 'Otherwise']],
             self::End => [],
             default => [['id' => 'next', 'label' => 'Next']],

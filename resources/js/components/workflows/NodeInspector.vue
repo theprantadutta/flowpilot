@@ -143,6 +143,27 @@ const recipients = computed({
     set: (value: PersonPick[]) => set('recipients', value),
 });
 
+const approver = computed({
+    get: () => (props.config.approver as PersonPick | null | undefined) ?? null,
+    set: (value: PersonPick | null) => set('approver', value),
+});
+
+/** Amount fields the approver should see. */
+const amountFields = computed(() =>
+    props.fields.filter(
+        (field) => field.type === 'money' || field.type === 'number',
+    ),
+);
+
+const amountField = computed({
+    get: () =>
+        typeof props.config.amount_field === 'string'
+            ? props.config.amount_field
+            : 'none',
+    set: (value: string) =>
+        set('amount_field', value === 'none' ? null : value),
+});
+
 const assignee = computed({
     get: () => (props.config.assignee as PersonPick | null | undefined) ?? null,
     set: (value: PersonPick | null) => set('assignee', value),
@@ -179,6 +200,7 @@ function updateWebhookField(
     );
 }
 
+const approvalPlaceholder = 'Approve the purchase of {{ input.item }}';
 const webhookPlaceholder = 'https:' + '//hooks.example.com/flowpilot';
 
 function changeTrigger(value: unknown) {
@@ -374,6 +396,134 @@ function changeTrigger(value: unknown) {
                 <Plus />
                 Add a case
             </Button>
+        </template>
+
+        <!-- Approval -->
+        <template v-else-if="type === 'approval'">
+            <FormField v-slot="field" label="What needs approving">
+                <TemplateField
+                    v-bind="field"
+                    :model-value="text('title')"
+                    :variables="variables"
+                    :maxlength="200"
+                    :disabled="disabled"
+                    :placeholder="approvalPlaceholder"
+                    @update:model-value="(value) => set('title', value)"
+                />
+            </FormField>
+            <FormField v-slot="field" label="Details for the approver" optional>
+                <TemplateField
+                    v-bind="field"
+                    :model-value="text('description')"
+                    :variables="variables"
+                    multiline
+                    :maxlength="5000"
+                    :disabled="disabled"
+                    @update:model-value="(value) => set('description', value)"
+                />
+            </FormField>
+            <FormField
+                v-slot="field"
+                label="Who approves"
+                help="A role means anyone holding it can decide. Nobody can approve their own request."
+            >
+                <PersonPickSelect
+                    :id="field.id"
+                    v-model="approver"
+                    :catalog="catalog"
+                    :fields="fields"
+                    :has-subject="false"
+                    :disabled="disabled"
+                />
+            </FormField>
+            <FormField v-slot="field" label="Amount to show" optional>
+                <Select v-model="amountField" :disabled="disabled">
+                    <SelectTrigger v-bind="field" class="w-full"
+                        ><SelectValue
+                    /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">No amount</SelectItem>
+                        <SelectItem
+                            v-for="option in amountFields"
+                            :key="option.path"
+                            :value="option.path"
+                            >{{ option.label }}</SelectItem
+                        >
+                    </SelectContent>
+                </Select>
+            </FormField>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <FormField v-slot="field" label="Priority">
+                    <Select
+                        :model-value="text('priority') || 'medium'"
+                        :disabled="disabled"
+                        @update:model-value="(value) => set('priority', value)"
+                    >
+                        <SelectTrigger v-bind="field" class="w-full"
+                            ><SelectValue
+                        /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="option in catalog.priorities"
+                                :key="option.value"
+                                :value="option.value"
+                                >{{ option.label }}</SelectItem
+                            >
+                        </SelectContent>
+                    </Select>
+                </FormField>
+                <FormField
+                    v-slot="field"
+                    label="Decide within (hours)"
+                    optional
+                >
+                    <Input
+                        v-bind="field"
+                        :model-value="
+                            config.due_in_hours === null ||
+                            config.due_in_hours === undefined
+                                ? ''
+                                : String(config.due_in_hours)
+                        "
+                        type="number"
+                        min="1"
+                        max="720"
+                        class="figures"
+                        :disabled="disabled"
+                        @update:model-value="
+                            (value) =>
+                                set(
+                                    'due_in_hours',
+                                    value === '' ? null : Number(value),
+                                )
+                        "
+                    />
+                </FormField>
+            </div>
+            <FormField v-slot="field" label="If nobody decides in time">
+                <Select
+                    :model-value="text('when_overdue') || 'remind'"
+                    :disabled="disabled"
+                    @update:model-value="(value) => set('when_overdue', value)"
+                >
+                    <SelectTrigger v-bind="field" class="w-full"
+                        ><SelectValue
+                    /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="remind"
+                            >Remind the approvers and keep waiting</SelectItem
+                        >
+                        <SelectItem value="reject"
+                            >Treat it as rejected</SelectItem
+                        >
+                    </SelectContent>
+                </Select>
+            </FormField>
+            <p class="text-xs text-muted-foreground">
+                The run waits here. It continues down “Approved” or “Rejected”;
+                asking for changes keeps it waiting until the request is
+                resubmitted.
+            </p>
         </template>
 
         <!-- Notification -->

@@ -15,6 +15,9 @@ class WorkflowTemplates
     {
         return [
             $this->blank(),
+            $this->purchaseApproval(),
+            $this->leaveRequest(),
+            $this->expenseApproval(),
             $this->criticalIssueEscalation(),
             $this->newStarterOnboarding(),
             $this->urgentTaskAlert(),
@@ -76,6 +79,230 @@ class WorkflowTemplates
             'category' => 'Basics',
             'trigger' => 'manual',
             'definition' => $this->starter('manual'),
+        ];
+    }
+
+    /**
+     * The flagship flow: manager approval, finance for anything over 5,000,
+     * then procurement orders it.
+     *
+     * @return array{key: string, name: string, description: string, category: string, trigger: string, definition: array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}}
+     */
+    private function purchaseApproval(): array
+    {
+        return [
+            'key' => 'purchase-approval',
+            'name' => 'Purchase approval',
+            'description' => 'A manager approves every purchase, finance also approves anything over 5,000, then procurement is asked to order it.',
+            'category' => 'Finance',
+            'trigger' => 'manual',
+            'definition' => [
+                'nodes' => [
+                    self::node('trigger', 'trigger', 'Purchase requested', 0, 0, [
+                        'inputs' => [
+                            ['key' => 'item', 'label' => 'Item', 'type' => 'text', 'required' => true, 'options' => []],
+                            ['key' => 'quantity', 'label' => 'Quantity', 'type' => 'number', 'required' => true, 'options' => []],
+                            ['key' => 'amount', 'label' => 'Total amount', 'type' => 'money', 'required' => true, 'options' => []],
+                            ['key' => 'supplier', 'label' => 'Supplier', 'type' => 'text', 'required' => true, 'options' => []],
+                            ['key' => 'needed_by', 'label' => 'Needed by', 'type' => 'date', 'required' => true, 'options' => []],
+                            ['key' => 'reason', 'label' => 'Why it is needed', 'type' => 'text', 'required' => false, 'options' => []],
+                        ],
+                    ]),
+                    self::node('manager_approval', 'approval', 'Manager approval', 0, 160, [
+                        'title' => 'Purchase: {{ input.quantity }} × {{ input.item }}',
+                        'description' => 'From {{ input.supplier }}, needed by {{ input.needed_by }}. {{ input.reason }}',
+                        'approver' => ['type' => 'role', 'role' => 'manager'],
+                        'amount_field' => 'input.amount',
+                        'priority' => 'medium',
+                        'due_in_hours' => 48,
+                        'when_overdue' => 'remind',
+                    ]),
+                    self::node('over_limit', 'condition', 'Over 5,000?', -240, 330, [
+                        'match' => 'all',
+                        'rules' => [['field' => 'input.amount', 'operator' => 'greater_than', 'value' => '5000']],
+                    ]),
+                    self::node('finance_approval', 'approval', 'Finance approval', -480, 500, [
+                        'title' => 'Finance check: {{ input.item }} ({{ input.amount }})',
+                        'description' => 'Approved by {{ steps.manager_approval.decided_by }}. From {{ input.supplier }}, needed by {{ input.needed_by }}.',
+                        'approver' => ['type' => 'role', 'role' => 'finance'],
+                        'amount_field' => 'input.amount',
+                        'priority' => 'high',
+                        'due_in_hours' => 48,
+                        'when_overdue' => 'remind',
+                    ]),
+                    self::node('order_task', 'create_record', 'Ask procurement to order', -240, 680, [
+                        'record' => 'task',
+                        'title' => 'Order {{ input.quantity }} × {{ input.item }} from {{ input.supplier }}',
+                        'description' => 'Approved purchase of {{ input.amount }}, needed by {{ input.needed_by }}. Requested by {{ actor.name }}.',
+                        'priority' => 'high',
+                        'assignee' => ['type' => 'role', 'role' => 'procurement'],
+                        'project' => null,
+                        'due_in_days' => 2,
+                        'tags' => ['purchase'],
+                    ]),
+                    self::node('tell_approved', 'notification', 'Tell the requester', -240, 850, [
+                        'recipients' => [['type' => 'starter']],
+                        'title' => 'Your purchase of {{ input.item }} is approved',
+                        'message' => 'Procurement will order it: {{ steps.order_task.reference }}.',
+                    ]),
+                    self::node('approved', 'end', 'Approved', -240, 1020, ['summary' => 'Approved and sent to procurement']),
+                    self::node('tell_rejected', 'notification', 'Tell the requester', 260, 500, [
+                        'recipients' => [['type' => 'starter']],
+                        'title' => 'Your purchase of {{ input.item }} was not approved',
+                        'message' => 'Open the request to see the reason.',
+                    ]),
+                    self::node('rejected', 'end', 'Not approved', 260, 680, ['summary' => 'Not approved']),
+                ],
+                'edges' => [
+                    self::edge('trigger', 'manager_approval'),
+                    self::edge('manager_approval', 'over_limit', 'approved'),
+                    self::edge('manager_approval', 'tell_rejected', 'rejected'),
+                    self::edge('over_limit', 'finance_approval', 'true'),
+                    self::edge('over_limit', 'order_task', 'false'),
+                    self::edge('finance_approval', 'order_task', 'approved'),
+                    self::edge('finance_approval', 'tell_rejected', 'rejected'),
+                    self::edge('order_task', 'tell_approved'),
+                    self::edge('tell_approved', 'approved'),
+                    self::edge('tell_rejected', 'rejected'),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array{key: string, name: string, description: string, category: string, trigger: string, definition: array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}}
+     */
+    private function leaveRequest(): array
+    {
+        return [
+            'key' => 'leave-request',
+            'name' => 'Leave request',
+            'description' => 'Someone asks for time off, a manager decides, and they hear back either way.',
+            'category' => 'People',
+            'trigger' => 'manual',
+            'definition' => [
+                'nodes' => [
+                    self::node('trigger', 'trigger', 'Leave requested', 0, 0, [
+                        'inputs' => [
+                            ['key' => 'leave_type', 'label' => 'Type of leave', 'type' => 'select', 'required' => true, 'options' => [
+                                ['value' => 'annual', 'label' => 'Annual leave'],
+                                ['value' => 'sick', 'label' => 'Sick leave'],
+                                ['value' => 'unpaid', 'label' => 'Unpaid leave'],
+                                ['value' => 'other', 'label' => 'Other'],
+                            ]],
+                            ['key' => 'first_day', 'label' => 'First day', 'type' => 'date', 'required' => true, 'options' => []],
+                            ['key' => 'last_day', 'label' => 'Last day', 'type' => 'date', 'required' => true, 'options' => []],
+                            ['key' => 'cover', 'label' => 'Who covers', 'type' => 'person', 'required' => false, 'options' => []],
+                            ['key' => 'notes', 'label' => 'Notes', 'type' => 'text', 'required' => false, 'options' => []],
+                        ],
+                    ]),
+                    self::node('manager_approval', 'approval', 'Manager decides', 0, 160, [
+                        'title' => '{{ input.leave_type }}: {{ input.first_day }} to {{ input.last_day }}',
+                        'description' => 'Requested by {{ actor.name }}. Cover: {{ input.cover }}. {{ input.notes }}',
+                        'approver' => ['type' => 'role', 'role' => 'manager'],
+                        'amount_field' => null,
+                        'priority' => 'medium',
+                        'due_in_hours' => 24,
+                        'when_overdue' => 'remind',
+                    ]),
+                    self::node('tell_approved', 'notification', 'Confirm the leave', -220, 330, [
+                        'recipients' => [['type' => 'starter'], ['type' => 'field', 'field' => 'input.cover']],
+                        'title' => 'Leave approved: {{ input.first_day }} to {{ input.last_day }}',
+                        'message' => 'Approved by {{ steps.manager_approval.decided_by }}. {{ steps.manager_approval.note }}',
+                    ]),
+                    self::node('approved', 'end', 'Approved', -220, 500, ['summary' => 'Leave approved']),
+                    self::node('tell_declined', 'notification', 'Explain the decision', 220, 330, [
+                        'recipients' => [['type' => 'starter']],
+                        'title' => 'Leave not approved: {{ input.first_day }} to {{ input.last_day }}',
+                        'message' => '{{ steps.manager_approval.decided_by }} said: {{ steps.manager_approval.note }}',
+                    ]),
+                    self::node('declined', 'end', 'Declined', 220, 500, ['summary' => 'Leave declined']),
+                ],
+                'edges' => [
+                    self::edge('trigger', 'manager_approval'),
+                    self::edge('manager_approval', 'tell_approved', 'approved'),
+                    self::edge('manager_approval', 'tell_declined', 'rejected'),
+                    self::edge('tell_approved', 'approved'),
+                    self::edge('tell_declined', 'declined'),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array{key: string, name: string, description: string, category: string, trigger: string, definition: array{nodes: list<array<string, mixed>>, edges: list<array<string, mixed>>}}
+     */
+    private function expenseApproval(): array
+    {
+        return [
+            'key' => 'expense-approval',
+            'name' => 'Expense approval',
+            'description' => 'Small expenses go to a manager, anything over 1,000 goes to finance, and the claimant hears the outcome.',
+            'category' => 'Finance',
+            'trigger' => 'manual',
+            'definition' => [
+                'nodes' => [
+                    self::node('trigger', 'trigger', 'Expense claimed', 0, 0, [
+                        'inputs' => [
+                            ['key' => 'what', 'label' => 'What it was for', 'type' => 'text', 'required' => true, 'options' => []],
+                            ['key' => 'category', 'label' => 'Category', 'type' => 'select', 'required' => true, 'options' => [
+                                ['value' => 'travel', 'label' => 'Travel'],
+                                ['value' => 'meals', 'label' => 'Meals'],
+                                ['value' => 'equipment', 'label' => 'Equipment'],
+                                ['value' => 'training', 'label' => 'Training'],
+                                ['value' => 'other', 'label' => 'Other'],
+                            ]],
+                            ['key' => 'amount', 'label' => 'Amount', 'type' => 'money', 'required' => true, 'options' => []],
+                            ['key' => 'spent_on', 'label' => 'Date spent', 'type' => 'date', 'required' => true, 'options' => []],
+                        ],
+                    ]),
+                    self::node('large', 'condition', 'Over 1,000?', 0, 160, [
+                        'match' => 'all',
+                        'rules' => [['field' => 'input.amount', 'operator' => 'greater_than', 'value' => '1000']],
+                    ]),
+                    self::node('finance_approval', 'approval', 'Finance approval', -240, 330, [
+                        'title' => '{{ input.category }} expense: {{ input.what }}',
+                        'description' => 'Spent on {{ input.spent_on }} by {{ actor.name }}.',
+                        'approver' => ['type' => 'role', 'role' => 'finance'],
+                        'amount_field' => 'input.amount',
+                        'priority' => 'medium',
+                        'due_in_hours' => 72,
+                        'when_overdue' => 'remind',
+                    ]),
+                    self::node('manager_approval', 'approval', 'Manager approval', 240, 330, [
+                        'title' => '{{ input.category }} expense: {{ input.what }}',
+                        'description' => 'Spent on {{ input.spent_on }} by {{ actor.name }}.',
+                        'approver' => ['type' => 'role', 'role' => 'manager'],
+                        'amount_field' => 'input.amount',
+                        'priority' => 'low',
+                        'due_in_hours' => 72,
+                        'when_overdue' => 'remind',
+                    ]),
+                    self::node('tell_approved', 'notification', 'Tell the claimant', -240, 520, [
+                        'recipients' => [['type' => 'starter']],
+                        'title' => 'Expense approved: {{ input.amount }} for {{ input.what }}',
+                        'message' => 'It will be paid back with the next payroll.',
+                    ]),
+                    self::node('approved', 'end', 'Approved', -240, 690, ['summary' => 'Expense approved']),
+                    self::node('tell_rejected', 'notification', 'Tell the claimant', 240, 520, [
+                        'recipients' => [['type' => 'starter']],
+                        'title' => 'Expense not approved: {{ input.what }}',
+                        'message' => 'Open the request to see the reason.',
+                    ]),
+                    self::node('rejected', 'end', 'Not approved', 240, 690, ['summary' => 'Expense not approved']),
+                ],
+                'edges' => [
+                    self::edge('trigger', 'large'),
+                    self::edge('large', 'finance_approval', 'true'),
+                    self::edge('large', 'manager_approval', 'false'),
+                    self::edge('finance_approval', 'tell_approved', 'approved'),
+                    self::edge('finance_approval', 'tell_rejected', 'rejected'),
+                    self::edge('manager_approval', 'tell_approved', 'approved'),
+                    self::edge('manager_approval', 'tell_rejected', 'rejected'),
+                    self::edge('tell_approved', 'approved'),
+                    self::edge('tell_rejected', 'rejected'),
+                ],
+            ],
         ];
     }
 

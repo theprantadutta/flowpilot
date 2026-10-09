@@ -18,6 +18,7 @@ class NodeRegistry
         'trigger' => TriggerHandler::class,
         'condition' => ConditionHandler::class,
         'branch' => BranchHandler::class,
+        'approval' => ApprovalHandler::class,
         'action' => ActionHandler::class,
         'notification' => NotificationHandler::class,
         'delay' => DelayHandler::class,

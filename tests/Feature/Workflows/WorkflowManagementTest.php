@@ -36,7 +36,7 @@ describe('creating and editing', function () {
                 ->where('workflows.data.0.version', 1)
                 ->where('workflows.data.0.runs_count', 2)
                 ->where('stats.active', 1)
-                ->has('templates', 5));
+                ->has('templates', 8));
     });
 
     it('creates a workflow from a template and opens the builder', function () {

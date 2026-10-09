@@ -36,6 +36,8 @@ enum Permission: string
     case ApprovalsView = 'approvals.view';
     case ApprovalsApprove = 'approvals.approve';
     case ApprovalsReject = 'approvals.reject';
+    case ApprovalsOverride = 'approvals.override';
+    case ApprovalsRequest = 'approvals.request';
 
     case InventoryView = 'inventory.view';
     case InventoryManage = 'inventory.manage';
@@ -77,6 +79,8 @@ enum Permission: string
             self::ApprovalsView => 'View approvals',
             self::ApprovalsApprove => 'Approve requests',
             self::ApprovalsReject => 'Reject requests',
+            self::ApprovalsOverride => 'Decide any request, whoever it is waiting on',
+            self::ApprovalsRequest => 'Raise approval requests',
             self::InventoryView => 'View inventory',
             self::InventoryManage => 'Manage stock, suppliers and locations',
             self::InventoryRequest => 'Raise purchase requests',

@@ -44,6 +44,11 @@ final readonly class ValidationScope
         'assign' => [
             ['key' => 'assignee', 'label' => 'assignee'],
         ],
+        'approval' => [
+            ['key' => 'approval', 'label' => 'request reference'],
+            ['key' => 'decided_by', 'label' => 'decided by'],
+            ['key' => 'note', 'label' => 'decision note'],
+        ],
     ];
 
     /**

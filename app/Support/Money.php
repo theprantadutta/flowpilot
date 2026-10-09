@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Number;
 use InvalidArgumentException;
+use Throwable;
 
 /**
  * Converts between what people type ("12,500.50") and what is stored
@@ -36,6 +38,21 @@ class Money
         $fraction = str_pad(substr($fraction, 0, $decimals), $decimals, '0');
 
         return (int) ltrim($whole.$fraction, '0') ?: 0;
+    }
+
+    /**
+     * An amount for people to read: 1250050 USD → "$12,500.50". Formatting only;
+     * amounts are never calculated from the result.
+     */
+    public static function format(int $minorUnits, string $currency, string $locale = 'en'): string
+    {
+        $decimal = self::toDecimalString($minorUnits, $currency) ?? '0';
+
+        try {
+            return Number::currency((float) $decimal, $currency, $locale, Currencies::decimals($currency)) ?: "{$currency} {$decimal}";
+        } catch (Throwable) {
+            return "{$currency} {$decimal}";
+        }
     }
 
     /**

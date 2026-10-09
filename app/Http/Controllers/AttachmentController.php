@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAttachmentRequest;
+use App\Models\Approval;
 use App\Models\Attachment;
 use App\Models\Issue;
 use App\Models\Project;
@@ -44,6 +45,11 @@ class AttachmentController extends Controller
         return $this->store($request, $issue);
     }
 
+    public function storeForApproval(StoreAttachmentRequest $request, Approval $approval): RedirectResponse
+    {
+        return $this->store($request, $approval);
+    }
+
     public function download(Attachment $attachment): StreamedResponse
     {
         $attachable = $this->attachable($attachment);
@@ -78,7 +84,7 @@ class AttachmentController extends Controller
         return back();
     }
 
-    private function store(StoreAttachmentRequest $request, Project|Task|Issue $attachable): RedirectResponse
+    private function store(StoreAttachmentRequest $request, Project|Task|Issue|Approval $attachable): RedirectResponse
     {
         Gate::authorize('update', $attachable);
 
@@ -105,22 +111,22 @@ class AttachmentController extends Controller
      * The record a file belongs to, found through its tenant-scoped model, so
      * a file from another organization never resolves.
      */
-    private function attachable(Attachment $attachment): Project|Task|Issue
+    private function attachable(Attachment $attachment): Project|Task|Issue|Approval
     {
         $attachable = $attachment->attachable;
 
-        abort_unless($attachable instanceof Project || $attachable instanceof Task || $attachable instanceof Issue, 404);
+        abort_unless($attachable instanceof Project || $attachable instanceof Task || $attachable instanceof Issue || $attachable instanceof Approval, 404);
 
         return $attachable;
     }
 
-    private function label(Project|Task|Issue $attachable): string
+    private function label(Project|Task|Issue|Approval $attachable): string
     {
         return $attachable instanceof Project ? $attachable->name : "{$attachable->reference()} {$attachable->title}";
     }
 
-    private function context(Project|Task|Issue $attachable): ?Model
+    private function context(Project|Task|Issue|Approval $attachable): ?Model
     {
-        return $attachable instanceof Project ? null : $attachable->project;
+        return $attachable instanceof Project || $attachable instanceof Approval ? null : $attachable->project;
     }
 }

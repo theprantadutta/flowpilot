@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ChevronDown, Clock, RotateCw } from '@lucide/vue';
+import { Link } from '@inertiajs/vue3';
+import { ChevronDown, Clock, RotateCw, Stamp } from '@lucide/vue';
 import EnumBadge from '@/components/EnumBadge.vue';
 import NamedIcon from '@/components/NamedIcon.vue';
 import {
@@ -38,6 +39,10 @@ const outputLabels: Record<string, string> = {
     tag: 'Tag',
     status: 'Response',
     summary: 'Summary',
+    approval: 'Request',
+    approver: 'Waiting on',
+    decision: 'Decision',
+    decided_by: 'Decided by',
 };
 
 const hidden = new Set([
@@ -47,7 +52,20 @@ const hidden = new Set([
     'delivery_id',
     'delivery_key',
     'record_type',
+    'approval_url',
 ]);
+
+/** The approval request a step raised, to link to it. */
+function approvalLink(
+    step: WorkflowStepItem,
+): { url: string; reference: string } | null {
+    const url = step.output?.approval_url;
+    const reference = step.output?.approval;
+
+    return typeof url === 'string' && typeof reference === 'string'
+        ? { url, reference }
+        : null;
+}
 
 function outputRows(
     step: WorkflowStepItem,
@@ -212,6 +230,15 @@ function checks(step: WorkflowStepItem): Check[] {
                         </span>
                     </li>
                 </ul>
+
+                <Link
+                    v-if="approvalLink(step)"
+                    :href="approvalLink(step)!.url"
+                    class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                >
+                    <Stamp class="size-4" aria-hidden="true" />
+                    Open request {{ approvalLink(step)!.reference }}
+                </Link>
 
                 <dl
                     v-if="outputRows(step).length"

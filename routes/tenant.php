@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\InvitationController;
@@ -135,3 +136,22 @@ Route::post('runs/{run}/cancel', [WorkflowRunController::class, 'cancel'])->name
 Route::post('runs/{run}/retry', [WorkflowRunController::class, 'retry'])
     ->middleware('throttle:30,1')
     ->name('workflow-runs.retry');
+
+Route::get('approvals', [ApprovalController::class, 'index'])->name('approvals.index');
+Route::post('approvals', [ApprovalController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('approvals.store');
+Route::get('approvals/{approval}', [ApprovalController::class, 'show'])->name('approvals.show');
+Route::post('approvals/{approval}/decision', [ApprovalController::class, 'decide'])
+    ->middleware('throttle:60,1')
+    ->name('approvals.decide');
+Route::post('approvals/{approval}/resubmit', [ApprovalController::class, 'resubmit'])
+    ->middleware('throttle:30,1')
+    ->name('approvals.resubmit');
+Route::post('approvals/{approval}/withdraw', [ApprovalController::class, 'withdraw'])->name('approvals.withdraw');
+Route::post('approvals/{approval}/comments', [CommentController::class, 'storeForApproval'])
+    ->middleware('throttle:60,1')
+    ->name('approvals.comments.store');
+Route::post('approvals/{approval}/attachments', [AttachmentController::class, 'storeForApproval'])
+    ->middleware('throttle:30,1')
+    ->name('approvals.attachments.store');
