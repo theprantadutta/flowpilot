@@ -24,6 +24,7 @@ class BillingSummary
     {
         $subscription = $this->entitlements->subscription($organization);
         $plan = $this->entitlements->plan($organization);
+        $usages = $this->entitlements->usages($organization);
 
         return [
             'plan' => ['value' => $plan->value, 'label' => $plan->label(), 'price' => $this->price($plan)],
@@ -37,7 +38,7 @@ class BillingSummary
             'usage' => array_map(fn (Limit $limit): array => [
                 'key' => $limit->value,
                 'label' => $limit->label(),
-                'used' => $this->entitlements->usage($limit, $organization),
+                'used' => $usages[$limit->value],
                 'limit' => $this->entitlements->limit($limit, $organization),
                 'unit' => $limit === Limit::StorageMb ? 'mb' : 'count',
             ], Limit::cases()),

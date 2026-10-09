@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\InvitationAcceptanceController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Middleware\EnforceOrganizationSecurity;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\SetCurrentOrganization;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('app/{organization}')
         ->middleware([SetCurrentOrganization::class, EnforceOrganizationSecurity::class])
         ->group(base_path('routes/tenant.php'));
+
+    /*
+    | Platform administration, for the FlowPilot team. Recent password
+    | confirmation keeps a stolen session from reaching it.
+    */
+    Route::prefix('platform')
+        ->name('platform.')
+        ->middleware([EnsurePlatformAdmin::class, 'password.confirm'])
+        ->group(base_path('routes/platform.php'));
 });
 
 require __DIR__.'/settings.php';

@@ -22,6 +22,8 @@ class PlanChangeRequestedNotification extends Notification implements ShouldQueu
 
     public string $organizationId;
 
+    public string $organizationSlug;
+
     public string $from;
 
     public string $to;
@@ -35,6 +37,7 @@ class PlanChangeRequestedNotification extends Notification implements ShouldQueu
     public function __construct(Organization $organization, PlanChangeRequest $request, User $requester)
     {
         $this->organizationId = $organization->id;
+        $this->organizationSlug = $organization->slug;
         $this->organizationName = $organization->name;
         $this->from = $request->from_plan->label();
         $this->to = $request->to_plan->label();
@@ -63,6 +66,6 @@ class PlanChangeRequestedNotification extends Notification implements ShouldQueu
             $mail->line('Their note: '.$this->message);
         }
 
-        return $mail->line('Change the plan from platform administration once it is agreed.');
+        return $mail->action('Open in platform administration', route('platform.organizations.show', ['organization' => $this->organizationSlug]));
     }
 }

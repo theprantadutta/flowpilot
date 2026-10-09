@@ -9,6 +9,7 @@ use App\Enums\ProjectStatus;
 use App\Enums\Role;
 use App\Enums\TaskStatus;
 use App\Models\ActivityLog;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
 /**
@@ -31,6 +32,7 @@ class ActivityPresenter
                 'system' => 'FlowPilot',
                 'ai' => 'FlowPilot AI',
                 'workflow' => ($this->string($properties, 'workflow') ?? 'A').' workflow',
+                'platform' => 'FlowPilot support',
                 default => $log->actor->name ?? 'A former member',
             },
             'actor_type' => $log->actor_type,
@@ -104,6 +106,10 @@ class ActivityPresenter
             'billing.plan_change_requested' => sprintf('asked to upgrade to the %s plan', Plan::tryFrom((string) $this->string($properties, 'to'))?->label() ?? 'a higher'),
             'billing.plan_change_withdrawn' => sprintf('withdrew the request to upgrade to the %s plan', Plan::tryFrom((string) $this->string($properties, 'to'))?->label() ?? 'a higher'),
             'billing.details_updated' => 'updated the billing details',
+            'platform.trial_extended' => sprintf('extended the %s trial until %s', Plan::tryFrom((string) $this->string($properties, 'plan'))?->label() ?? 'plan', ($until = $this->string($properties, 'until')) !== null ? CarbonImmutable::parse($until)->format('M j, Y') : 'later'),
+            'platform.organization_suspended' => 'suspended the organization'.(($reason = $this->string($properties, 'reason')) !== null ? ": {$reason}" : ''),
+            'platform.organization_reactivated' => 'lifted the suspension of the organization',
+            'platform.plan_request_declined' => sprintf('declined the request to move to %s', Plan::tryFrom((string) $this->string($properties, 'to'))?->label() ?? 'a higher plan'),
             'report.exported' => sprintf('exported the %s report (%s)', $this->string($properties, 'report') ?? 'a', $this->string($properties, 'range') ?? 'all dates'),
             'settings.webhook_secret_viewed' => 'revealed the webhook signing secret',
             'settings.webhook_secret_rotated' => 'replaced the webhook signing secret',
@@ -196,6 +202,7 @@ class ActivityPresenter
             'file' => 'paperclip',
             'report' => 'file-down',
             'billing' => 'gauge',
+            'platform' => 'building',
             default => 'activity',
         };
     }

@@ -4,6 +4,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Version
+    |--------------------------------------------------------------------------
+    |
+    | The release that is running, shown to platform administrators. The
+    | deployment sets it (for example to the git commit being shipped).
+    |
+    */
+
+    'version' => env('FLOWPILOT_VERSION') ?: 'development',
+
+    /*
+    |--------------------------------------------------------------------------
     | Invitations
     |--------------------------------------------------------------------------
     |

@@ -4,7 +4,7 @@ export type ActivityEntry = {
     id: string;
     action: string;
     actor: string;
-    actor_type: 'user' | 'system' | 'ai' | 'workflow';
+    actor_type: 'user' | 'system' | 'ai' | 'workflow' | 'platform';
     summary: string;
     subject: string | null;
     tone: Tone;

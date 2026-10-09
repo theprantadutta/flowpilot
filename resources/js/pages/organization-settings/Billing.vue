@@ -2,6 +2,7 @@
 import { Head, router, setLayoutProps, useForm } from '@inertiajs/vue3';
 import { Check, Mail, Minus, Undo2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import UsageMeters from '@/components/billing/UsageMeters.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import EnumBadge from '@/components/EnumBadge.vue';
 import FormField from '@/components/FormField.vue';
@@ -19,8 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrganization } from '@/composables/useOrganization';
-import { formatValue } from '@/lib/charts';
-import { formatDate, formatNumber, timeAgo } from '@/lib/format';
+import { formatDate, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { free as moveToFree, show } from '@/routes/billing';
 import { update as updateDetails } from '@/routes/billing/details';
@@ -29,15 +29,7 @@ import {
     store as requestPlan,
 } from '@/routes/billing/plan-requests';
 import { show as settingsShow } from '@/routes/organization-settings';
-import type { EnumOption } from '@/types/operations';
-
-type UsageLine = {
-    key: string;
-    label: string;
-    used: number;
-    limit: number | null;
-    unit: 'count' | 'mb';
-};
+import type { BillingSummary } from '@/types/billing';
 
 type PlanCard = {
     value: string;
@@ -51,17 +43,7 @@ type PlanCard = {
 };
 
 const props = defineProps<{
-    billing: {
-        plan: { value: string; label: string; price: string | null };
-        subscribed_plan: { value: string; label: string } | null;
-        status: EnumOption | null;
-        on_trial: boolean;
-        trial_ends_at: string | null;
-        trial_days_left: number | null;
-        current_period_end: string | null;
-        has_custom_limits: boolean;
-        usage: UsageLine[];
-    };
+    billing: BillingSummary;
     plans: PlanCard[];
     pendingRequest: {
         id: string;
@@ -94,43 +76,6 @@ const currentRank = computed(
         props.plans.find((plan) => plan.value === props.billing.plan.value)
             ?.rank ?? 0,
 );
-
-function usagePercent(line: UsageLine): number | null {
-    if (line.limit === null) {
-        return null;
-    }
-
-    if (line.limit === 0) {
-        return line.used > 0 ? 100 : 0;
-    }
-
-    return Math.min(100, Math.round((line.used / line.limit) * 100));
-}
-
-function usageText(line: UsageLine): string {
-    const amount = (value: number) =>
-        line.unit === 'mb'
-            ? formatValue(value * 1_048_576, 'bytes')
-            : formatNumber(value);
-
-    if (line.limit === null) {
-        return `${amount(line.used)} used, no limit`;
-    }
-
-    if (line.limit === 0) {
-        return 'Not included';
-    }
-
-    return `${amount(line.used)} of ${amount(line.limit)}`;
-}
-
-function meterTone(percent: number | null): string {
-    if (percent === null || percent < 80) {
-        return 'bg-primary';
-    }
-
-    return percent >= 100 ? 'bg-danger' : 'bg-warning';
-}
 
 // Asking for a higher plan.
 const requesting = ref<PlanCard | null>(null);
@@ -325,53 +270,10 @@ const salesLink = computed(
                 </Button>
             </div>
 
-            <ul
-                class="grid gap-x-8 gap-y-5 border-t px-5 py-5 sm:grid-cols-2 sm:px-6"
-                aria-label="Usage"
-            >
-                <li
-                    v-for="line in billing.usage"
-                    :key="line.key"
-                    class="grid gap-1.5"
-                >
-                    <div
-                        class="flex items-baseline justify-between gap-3 text-sm"
-                    >
-                        <span class="font-medium">{{ line.label }}</span>
-                        <span class="figures text-muted-foreground">{{
-                            usageText(line)
-                        }}</span>
-                    </div>
-                    <div
-                        v-if="line.limit !== null && line.limit > 0"
-                        class="h-2 overflow-hidden rounded-full bg-primary/15"
-                        role="meter"
-                        :aria-label="line.label"
-                        aria-valuemin="0"
-                        :aria-valuemax="line.limit"
-                        :aria-valuenow="Math.min(line.used, line.limit)"
-                        :aria-valuetext="usageText(line)"
-                    >
-                        <div
-                            :class="
-                                cn(
-                                    'h-full rounded-full',
-                                    meterTone(usagePercent(line)),
-                                )
-                            "
-                            :style="{ width: `${usagePercent(line)}%` }"
-                        />
-                    </div>
-                    <p
-                        v-if="
-                            (usagePercent(line) ?? 0) >= 100 && line.limit !== 0
-                        "
-                        class="text-xs text-danger-text"
-                    >
-                        Used up. Nothing more can be added until you upgrade.
-                    </p>
-                </li>
-            </ul>
+            <UsageMeters
+                :usage="billing.usage"
+                class="border-t px-5 py-5 sm:px-6"
+            />
         </section>
 
         <section aria-labelledby="plans-heading" class="grid gap-3">

@@ -25,6 +25,20 @@ enum Limit: string
     }
 
     /**
+     * The limit itself, for setting a custom one: "Workflow runs a month".
+     */
+    public function capLabel(): string
+    {
+        return match ($this) {
+            self::Members => 'Members',
+            self::Workflows => 'Workflows',
+            self::WorkflowRunsPerMonth => 'Workflow runs a month',
+            self::StorageMb => 'File storage in MB',
+            self::AiBriefsPerDay => 'AI briefs a day',
+        };
+    }
+
+    /**
      * How the limit is counted, for the pricing table: "3 members".
      */
     public function describe(?int $value): string

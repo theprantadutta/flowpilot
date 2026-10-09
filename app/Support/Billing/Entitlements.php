@@ -9,12 +9,17 @@ use App\Enums\Plan;
 use App\Enums\WorkflowStatus;
 use App\Models\AiBrief;
 use App\Models\Attachment;
+use App\Models\Invitation;
 use App\Models\Organization;
+use App\Models\OrganizationMembership;
 use App\Models\Subscription;
 use App\Models\Workflow;
 use App\Models\WorkflowRun;
 use App\Support\Tenancy\Tenancy;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -79,25 +84,78 @@ class Entitlements
      */
     public function usage(Limit $limit, ?Organization $organization = null): int
     {
+        return $this->usages($organization, [$limit])[$limit->value];
+    }
+
+    /**
+     * How much of each limit is used right now, counted in a single query.
+     *
+     * @param  list<Limit>|null  $limits  Every limit when null.
+     * @return array<string, int> Keyed by limit.
+     */
+    public function usages(?Organization $organization = null, ?array $limits = null): array
+    {
         $organization ??= $this->tenancy->currentOrFail();
+        $limits ??= Limit::cases();
+        $query = DB::query();
+
+        foreach ($limits as $limit) {
+            foreach ($this->usageQueries($limit, $organization) as $alias => $subquery) {
+                $query->selectSub($subquery, $alias);
+            }
+        }
+
+        $row = (array) $query->first();
+        $count = fn (string $alias): int => (int) ($row[$alias] ?? 0);
+        $usages = [];
+
+        foreach ($limits as $limit) {
+            $usages[$limit->value] = match ($limit) {
+                Limit::Members => $count('members') + $count('members_invited'),
+                Limit::StorageMb => (int) ceil($count('storage_bytes') / 1_048_576),
+                default => $count($limit->value),
+            };
+        }
+
+        return $usages;
+    }
+
+    /**
+     * The counts behind one limit, as subqueries keyed by column alias.
+     *
+     * @return array<string, Builder<covariant Model>>
+     */
+    private function usageQueries(Limit $limit, Organization $organization): array
+    {
         $now = CarbonImmutable::now($organization->timezone);
 
         return match ($limit) {
-            Limit::Members => $organization->memberships()->where('status', MembershipStatus::Active)->count()
-                + $organization->invitations()->open()->count(),
-            Limit::Workflows => Workflow::withoutOrganizationScope()
+            Limit::Members => [
+                'members' => OrganizationMembership::query()
+                    ->where('organization_id', $organization->id)
+                    ->where('status', MembershipStatus::Active)
+                    ->selectRaw('count(*)'),
+                // An open invitation holds a seat until it is accepted or revoked.
+                'members_invited' => Invitation::query()
+                    ->where('organization_id', $organization->id)
+                    ->open()
+                    ->selectRaw('count(*)'),
+            ],
+            Limit::Workflows => ['workflows' => Workflow::withoutOrganizationScope()
                 ->where('organization_id', $organization->id)
                 ->where('status', '!=', WorkflowStatus::Archived->value)
-                ->count(),
-            Limit::WorkflowRunsPerMonth => WorkflowRun::withoutOrganizationScope()
+                ->selectRaw('count(*)')],
+            Limit::WorkflowRunsPerMonth => ['workflow_runs_per_month' => WorkflowRun::withoutOrganizationScope()
                 ->where('organization_id', $organization->id)
                 ->where('created_at', '>=', $now->startOfMonth()->utc())
-                ->count(),
-            Limit::StorageMb => (int) ceil(((int) Attachment::withoutOrganizationScope()->where('organization_id', $organization->id)->sum('size')) / 1_048_576),
-            Limit::AiBriefsPerDay => AiBrief::withoutOrganizationScope()
+                ->selectRaw('count(*)')],
+            Limit::StorageMb => ['storage_bytes' => Attachment::withoutOrganizationScope()
+                ->where('organization_id', $organization->id)
+                ->selectRaw('coalesce(sum(size), 0)')],
+            Limit::AiBriefsPerDay => ['ai_briefs_per_day' => AiBrief::withoutOrganizationScope()
                 ->where('organization_id', $organization->id)
                 ->where('created_at', '>=', $now->startOfDay()->utc())
-                ->count(),
+                ->selectRaw('count(*)')],
         };
     }
 

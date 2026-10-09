@@ -104,7 +104,7 @@ class AppServiceProvider extends ServiceProvider
         // Record ids are UUIDs. Anything else is a 404 before it reaches the
         // database (PostgreSQL rejects malformed UUIDs with an error).
         Route::patterns(array_fill_keys(
-            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest', 'export', 'brief', 'planRequest'],
+            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest', 'export', 'brief', 'planRequest', 'platformPlanRequest'],
             '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
         ));
 
@@ -118,6 +118,9 @@ class AppServiceProvider extends ServiceProvider
             ->currentOrFail()
             ->invitations()
             ->findOrFail($value));
+
+        // Platform administration works across organizations, outside any tenant.
+        Route::bind('platformPlanRequest', fn (string $value): PlanChangeRequest => PlanChangeRequest::withoutOrganizationScope()->findOrFail($value));
     }
 
     /**

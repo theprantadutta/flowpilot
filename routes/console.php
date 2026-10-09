@@ -1,5 +1,7 @@
 <?php
 
+use App\Support\Platform\SystemHealth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -41,4 +43,10 @@ Schedule::command('ai:prune-briefs')
 Schedule::command('billing:check-trials')
     ->hourly()
     ->withoutOverlapping()
+    ->onOneServer();
+
+// Lets platform health see that the scheduler is running.
+Schedule::call(fn () => Cache::put(SystemHealth::HEARTBEAT_KEY, now()->toIso8601String(), 600))
+    ->everyMinute()
+    ->name('scheduler-heartbeat')
     ->onOneServer();

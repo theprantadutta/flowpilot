@@ -40,9 +40,10 @@ class ChangePlan
         string $reason,
         ?array $limitOverrides = null,
         bool $notify = true,
+        string $actorType = 'user',
     ): Subscription {
-        return $this->tenancy->run($organization, function () use ($organization, $plan, $actor, $reason, $limitOverrides, $notify): Subscription {
-            $subscription = DB::transaction(function () use ($plan, $actor, $reason, $limitOverrides): Subscription {
+        return $this->tenancy->run($organization, function () use ($organization, $plan, $actor, $reason, $limitOverrides, $notify, $actorType): Subscription {
+            $subscription = DB::transaction(function () use ($plan, $actor, $reason, $limitOverrides, $actorType): Subscription {
                 $subscription = Subscription::query()->lockForUpdate()->firstOrNew([]);
                 $from = $subscription->exists ? $subscription->effectivePlan() : null;
 
@@ -70,7 +71,7 @@ class ChangePlan
                     'from' => $from?->value,
                     'to' => $plan->value,
                     'reason' => $reason,
-                ], actor: $actor, actorType: $actor !== null ? 'user' : 'system');
+                ], actor: $actor, actorType: $actor !== null ? $actorType : 'system');
 
                 return $subscription;
             });

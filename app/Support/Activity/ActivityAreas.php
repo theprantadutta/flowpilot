@@ -27,6 +27,7 @@ final class ActivityAreas
         'organization' => 'Organization',
         'report' => 'Reports',
         'billing' => 'Plan and billing',
+        'platform' => 'FlowPilot support',
     ];
 
     /**
@@ -39,7 +40,7 @@ final class ActivityAreas
         'approvals' => ['label' => 'Approvals', 'prefixes' => ['approval']],
         'automation' => ['label' => 'Automation', 'prefixes' => ['workflow']],
         'inventory' => ['label' => 'Inventory', 'prefixes' => ['inventory', 'purchase_request']],
-        'team' => ['label' => 'Team and settings', 'prefixes' => ['member', 'settings', 'organization', 'report', 'billing']],
+        'team' => ['label' => 'Team and settings', 'prefixes' => ['member', 'settings', 'organization', 'report', 'billing', 'platform']],
     ];
 
     /**
