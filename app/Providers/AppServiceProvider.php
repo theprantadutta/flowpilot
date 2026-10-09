@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Enums\Permission;
 use App\Models\ActivityLog;
+use App\Models\AiBrief;
 use App\Models\Approval;
 use App\Models\Attachment;
 use App\Models\Comment;
@@ -30,6 +31,8 @@ use App\Models\WorkflowRun;
 use App\Models\WorkflowStepRun;
 use App\Models\WorkflowVersion;
 use App\Notifications\Channels\TenantDatabaseChannel;
+use App\Support\Ai\AiProvider;
+use App\Support\Ai\FreewayProvider;
 use App\Support\Tenancy\Tenancy;
 use App\Workflows\Triggers\TriggerRegistry;
 use Carbon\CarbonImmutable;
@@ -44,6 +47,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -60,6 +64,16 @@ class AppServiceProvider extends ServiceProvider
 
         // Stateless catalog of what can start a workflow.
         $this->app->singleton(TriggerRegistry::class);
+
+        // The AI provider behind AiOperationsService, chosen by config.
+        $this->app->bind(AiProvider::class, function (): AiProvider {
+            $name = (string) config('ai.provider', 'freeway');
+
+            return match ($name) {
+                'freeway' => new FreewayProvider((array) config('ai.providers.freeway', [])),
+                default => throw new InvalidArgumentException("Unknown AI provider [{$name}]. Set AI_PROVIDER to freeway."),
+            };
+        });
     }
 
     /**
@@ -83,7 +97,7 @@ class AppServiceProvider extends ServiceProvider
         // Record ids are UUIDs. Anything else is a 404 before it reaches the
         // database (PostgreSQL rejects malformed UUIDs with an error).
         Route::patterns(array_fill_keys(
-            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest', 'export'],
+            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest', 'export', 'brief'],
             '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
         ));
 
@@ -156,6 +170,7 @@ class AppServiceProvider extends ServiceProvider
             'supplier' => Supplier::class,
             'purchase_request' => PurchaseRequest::class,
             'report_export' => ReportExport::class,
+            'ai_brief' => AiBrief::class,
         ]);
     }
 

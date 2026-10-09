@@ -66,3 +66,19 @@ it('is calm when nothing needs attention', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->loadDeferredProps(fn (Assert $reload) => $reload->where('attention', [])->where('myWork', [])));
 });
+
+it('does not ask members to decide their own purchase requests', function () {
+    $organization = Organization::factory()->create();
+
+    inTenant($organization, fn () => PurchaseRequest::factory()->create([
+        'organization_id' => $organization->id,
+        'status' => PurchaseRequestStatus::Submitted,
+        'requester_id' => $organization->owner_id,
+    ]));
+
+    actingAs($organization->owner)
+        ->get(route('overview', $organization))
+        ->assertInertia(fn (Assert $page) => $page
+            ->loadDeferredProps(fn (Assert $reload) => $reload
+                ->where('attention', fn ($items) => ! collect($items)->contains('key', 'purchases'))));
+});

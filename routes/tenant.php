@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\AiBriefController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CommentController;
@@ -36,6 +37,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', OverviewController::class)->name('overview');
+Route::post('ai/brief', [AiBriefController::class, 'store'])
+    ->middleware('throttle:20,1')
+    ->name('ai.brief.store');
 
 Route::get('search', SearchController::class)
     ->middleware('throttle:120,1')

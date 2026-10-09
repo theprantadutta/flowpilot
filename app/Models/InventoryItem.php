@@ -139,6 +139,14 @@ class InventoryItem extends Model
     }
 
     /**
+     * @return HasMany<PurchaseRequest, $this>
+     */
+    public function purchaseRequests(): HasMany
+    {
+        return $this->hasMany(PurchaseRequest::class);
+    }
+
+    /**
      * Items at or below their reorder point.
      *
      * @param  Builder<self>  $query

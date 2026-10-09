@@ -44,6 +44,21 @@ return [
             'after_commit' => false,
         ],
 
+        /*
+        | Long-running jobs (report exports, AI calls) run on their own "long"
+        | queue with a retry window longer than their timeout, so a slow job
+        | is never handed to a second worker while the first is still on it.
+        | Run a worker for it: php artisan queue:work {connection}-long --queue=long
+        */
+        'database-long' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'long',
+            'retry_after' => (int) env('LONG_QUEUE_RETRY_AFTER', 1000),
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),
@@ -69,6 +84,15 @@ return [
             'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
             'queue' => env('REDIS_QUEUE', 'default'),
             'retry_after' => (int) env('REDIS_QUEUE_RETRY_AFTER', 90),
+            'block_for' => null,
+            'after_commit' => false,
+        ],
+
+        'redis-long' => [
+            'driver' => 'redis',
+            'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
+            'queue' => 'long',
+            'retry_after' => (int) env('LONG_QUEUE_RETRY_AFTER', 1000),
             'block_for' => null,
             'after_commit' => false,
         ],

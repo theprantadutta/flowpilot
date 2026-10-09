@@ -30,3 +30,9 @@ Schedule::command('reports:prune-exports')
     ->daily()
     ->withoutOverlapping()
     ->onOneServer();
+
+// Gives up on AI briefs a stopped worker left half written; deletes old ones.
+Schedule::command('ai:prune-briefs')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();

@@ -22,6 +22,7 @@ use App\Support\Reports\SqlDates;
 use App\Support\Reports\Timeline;
 use App\Support\Tenancy\Tenancy;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Number;
 
 /**
@@ -115,7 +116,11 @@ class OverviewData
         }
 
         if ($user->can(Permission::InventoryManage->value)) {
-            $submitted = PurchaseRequest::query()->where('status', PurchaseRequestStatus::Submitted->value)->count();
+            // Only requests the member can decide: nobody approves their own.
+            $submitted = PurchaseRequest::query()
+                ->where('status', PurchaseRequestStatus::Submitted->value)
+                ->where(fn (Builder $requests) => $requests->whereNull('requester_id')->orWhere('requester_id', '!=', $user->id))
+                ->count();
 
             if ($submitted > 0) {
                 $items[] = $this->item('purchases', 'warning', 'shopping-cart',

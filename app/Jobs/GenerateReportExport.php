@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\ExportStatus;
+use App\Jobs\Concerns\RunsOnLongQueue;
 use App\Models\Organization;
 use App\Models\ReportExport;
 use App\Notifications\ReportExportFinishedNotification;
@@ -22,7 +23,7 @@ use Throwable;
  */
 class GenerateReportExport implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, RunsOnLongQueue;
 
     public int $tries = 2;
 
@@ -31,7 +32,9 @@ class GenerateReportExport implements ShouldQueue
     public function __construct(
         public string $organizationId,
         public string $exportId,
-    ) {}
+    ) {
+        $this->onLongQueue();
+    }
 
     public function handle(Tenancy $tenancy, ReportRegistry $reports, CsvWriter $writer): void
     {

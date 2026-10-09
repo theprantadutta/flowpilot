@@ -11,6 +11,7 @@ import {
 } from '@lucide/vue';
 import { computed } from 'vue';
 import ActivityItem from '@/components/ActivityItem.vue';
+import OperationsBriefCard from '@/components/ai/OperationsBriefCard.vue';
 import ChartCard from '@/components/charts/ChartCard.vue';
 import DueDate from '@/components/DueDate.vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -30,6 +31,7 @@ import { index as membersIndex } from '@/routes/members';
 import { index as purchaseRequestsIndex } from '@/routes/purchase-requests';
 import { index as tasksIndex } from '@/routes/tasks';
 import type { ActivityEntry } from '@/types/activity';
+import type { OperationsBrief } from '@/types/ai';
 import type { EnumOption } from '@/types/operations';
 import type { ChartData } from '@/types/reports';
 
@@ -67,6 +69,8 @@ type WorkItem = {
 defineProps<{
     team: { members: number; pendingInvitations: number };
     stats: Stat[];
+    ai: { enabled: boolean };
+    brief?: OperationsBrief | null;
     attention?: AttentionItem[];
     myWork?: WorkItem[];
     trends?: ChartData[];
@@ -167,6 +171,7 @@ const toneClasses: Record<AttentionItem['tone'], string> = {
 
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
             <div class="grid min-w-0 content-start gap-6">
+                <OperationsBriefCard v-if="ai.enabled" :brief="brief ?? null" />
                 <section
                     aria-labelledby="attention-heading"
                     class="overflow-hidden rounded-xl border bg-card shadow-xs"
