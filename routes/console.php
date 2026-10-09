@@ -24,3 +24,9 @@ Schedule::command('approvals:check-overdue')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->onOneServer();
+
+// Report exports are kept for a week; delete the files after that.
+Schedule::command('reports:prune-exports')
+    ->daily()
+    ->withoutOverlapping()
+    ->onOneServer();

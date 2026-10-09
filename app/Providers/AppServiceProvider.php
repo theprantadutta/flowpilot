@@ -19,6 +19,7 @@ use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\Project;
 use App\Models\PurchaseRequest;
+use App\Models\ReportExport;
 use App\Models\Supplier;
 use App\Models\Task;
 use App\Models\TaskChecklistItem;
@@ -82,7 +83,7 @@ class AppServiceProvider extends ServiceProvider
         // Record ids are UUIDs. Anything else is a 404 before it reaches the
         // database (PostgreSQL rejects malformed UUIDs with an error).
         Route::patterns(array_fill_keys(
-            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest'],
+            ['project', 'task', 'issue', 'comment', 'attachment', 'checklistItem', 'blocker', 'member', 'invitation', 'workflow', 'version', 'run', 'approval', 'item', 'supplier', 'location', 'category', 'purchaseRequest', 'export'],
             '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
         ));
 
@@ -154,6 +155,7 @@ class AppServiceProvider extends ServiceProvider
             'inventory_movement' => InventoryMovement::class,
             'supplier' => Supplier::class,
             'purchase_request' => PurchaseRequest::class,
+            'report_export' => ReportExport::class,
         ]);
     }
 

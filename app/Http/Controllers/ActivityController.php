@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Permission;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Support\Activity\ActivityAreas;
 use App\Support\Activity\ActivityPresenter;
 use App\Support\FormOptions;
 use App\Support\Tenancy\Tenancy;
@@ -22,19 +23,6 @@ use Inertia\Response;
  */
 class ActivityController extends Controller
 {
-    /**
-     * Activity areas, matched on the first part of the action name.
-     */
-    public const array AREAS = [
-        'project' => 'Projects',
-        'task' => 'Tasks',
-        'issue' => 'Issues',
-        'member' => 'Members',
-        'settings' => 'Settings',
-        'file' => 'Files',
-        'organization' => 'Organization',
-    ];
-
     public function __invoke(Request $request, ActivityPresenter $presenter, FormOptions $options, Tenancy $tenancy): Response
     {
         Gate::authorize(Permission::DashboardView->value);
@@ -45,7 +33,7 @@ class ActivityController extends Controller
         $timezone = $tenancy->currentOrFail()->timezone;
 
         $filters = [
-            'area' => array_key_exists($request->string('area')->toString(), self::AREAS) ? $request->string('area')->toString() : null,
+            'area' => array_key_exists($request->string('area')->toString(), ActivityAreas::AREAS) ? $request->string('area')->toString() : null,
             'actor' => ctype_digit($request->string('actor')->toString()) ? (int) $request->string('actor')->toString() : null,
             'from' => $this->date($request->string('from')->toString()),
             'to' => $this->date($request->string('to')->toString()),
@@ -74,7 +62,7 @@ class ActivityController extends Controller
         return Inertia::render('activity/Index', [
             'entries' => $entries,
             'filters' => $filters,
-            'areas' => collect(self::AREAS)->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])->values(),
+            'areas' => collect(ActivityAreas::AREAS)->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])->values(),
             'members' => fn () => $options->members(),
             'canAudit' => $canAudit,
         ]);

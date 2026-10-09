@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     Activity,
     Boxes,
+    ChartColumn,
     CircleAlert,
     FolderKanban,
     GitBranch,
@@ -41,6 +42,7 @@ import { index as members } from '@/routes/members';
 import { show as organizationSettings } from '@/routes/organization-settings';
 import { index as projects } from '@/routes/projects';
 import { index as purchaseRequests } from '@/routes/purchase-requests';
+import { index as reports } from '@/routes/reports';
 import { index as tasks } from '@/routes/tasks';
 import { index as workflowRuns } from '@/routes/workflow-runs';
 import { index as workflows } from '@/routes/workflows';
@@ -132,6 +134,13 @@ const groups = computed<NavGroup[]>(() => {
         {
             title: 'Insight',
             items: [
+                {
+                    title: 'Reports',
+                    href: reports(),
+                    icon: ChartColumn,
+                    permission: 'reports.view',
+                    matchPrefix: true,
+                },
                 {
                     title: 'Activity',
                     href: activity(),

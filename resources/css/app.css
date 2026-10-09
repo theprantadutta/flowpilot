@@ -106,7 +106,9 @@
     --color-chart-3: var(--chart-3);
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
+    --color-chart-neutral: var(--chart-neutral);
     --color-chart-grid: var(--chart-grid);
+    --color-chart-axis: var(--chart-axis);
 
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
@@ -197,12 +199,19 @@
     --neutral-soft: #edf1f6;
     --neutral-text: #475569;
 
-    --chart-1: #2563eb;
-    --chart-2: #06b6d4;
-    --chart-3: #7c3aed;
-    --chart-4: #f59e0b;
-    --chart-5: #10b981;
+    /*
+      Categorical chart slots, assigned in this order and never cycled. The
+      order is validated for colour-blind separation (adjacent ΔE ≥ 8) in both
+      modes; slots 3–5 sit below 3:1 on white, so charts always offer a table.
+    */
+    --chart-1: #2a78d6;
+    --chart-2: #eb6834;
+    --chart-3: #1baf7a;
+    --chart-4: #eda100;
+    --chart-5: #e87ba4;
+    --chart-neutral: #94a3b8;
     --chart-grid: #e2e8f0;
+    --chart-axis: #cbd5e1;
 
     --sidebar-background: #f6f8fb;
     --sidebar-foreground: #33415a;
@@ -267,12 +276,14 @@
     --neutral-soft: #172134;
     --neutral-text: #b4c0d3;
 
-    --chart-1: #60a5fa;
-    --chart-2: #22d3ee;
-    --chart-3: #a78bfa;
-    --chart-4: #fbbf24;
-    --chart-5: #34d399;
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-neutral: #64748b;
     --chart-grid: #1e293b;
+    --chart-axis: #2c3a52;
 
     --sidebar-background: #080d17;
     --sidebar-foreground: #a9b5c9;

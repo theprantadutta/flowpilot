@@ -89,13 +89,28 @@ return [
 
     'uploads' => [
         // Private disk for attachments. Use "s3" (or any private cloud disk) in production.
-        'disk' => env('ATTACHMENTS_DISK', 'local'),
+        'disk' => env('ATTACHMENTS_DISK', env('FILESYSTEM_DISK', 'local')),
         'max_file_kb' => 20 * 1024,
         'max_image_kb' => 2 * 1024,
         'allowed_extensions' => [
             'pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'txt', 'csv',
             'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip',
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Report exports
+    |--------------------------------------------------------------------------
+    |
+    | Exports are written in the background to a private disk and can be
+    | downloaded by the member who asked for them until they expire.
+    |
+    */
+
+    'exports' => [
+        'disk' => env('EXPORTS_DISK', env('FILESYSTEM_DISK', 'local')),
+        'keep_days' => 7,
     ],
 
     /*

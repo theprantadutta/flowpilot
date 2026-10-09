@@ -6,6 +6,7 @@ import {
     ArrowLeftRight,
     Bell,
     Boxes,
+    ChartColumn,
     CircleAlert,
     CornerDownLeft,
     FolderKanban,
@@ -58,6 +59,7 @@ import { show as organizationSettings } from '@/routes/organization-settings';
 import { edit as profileEdit } from '@/routes/profile';
 import { index as projectsIndex } from '@/routes/projects';
 import { index as purchaseRequestsIndex } from '@/routes/purchase-requests';
+import { index as reportsIndex } from '@/routes/reports';
 import { index as tasksIndex } from '@/routes/tasks';
 import { index as runsIndex } from '@/routes/workflow-runs';
 import { index as workflowsIndex } from '@/routes/workflows';
@@ -190,6 +192,15 @@ const commands = computed<Command[]>(() => {
                 permission: 'workflows.view',
                 keywords: 'automation history failed',
                 run: () => go(runsIndex()),
+            },
+            {
+                id: 'go-reports',
+                group: 'Go to',
+                label: 'Reports',
+                icon: ChartColumn,
+                permission: 'reports.view',
+                keywords: 'analytics charts export csv',
+                run: () => go(reportsIndex()),
             },
             {
                 id: 'go-activity',

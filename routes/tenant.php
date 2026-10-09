@@ -15,6 +15,8 @@ use App\Http\Controllers\OrganizationSettingsController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\PurchaseRequestController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TaskChecklistController;
 use App\Http\Controllers\TaskController;
@@ -196,3 +198,10 @@ Route::patch('purchase-requests/{purchaseRequest}/status', [PurchaseRequestContr
 Route::post('purchase-requests/{purchaseRequest}/receipts', [PurchaseRequestController::class, 'receive'])
     ->middleware('throttle:60,1')
     ->name('purchase-requests.receipts.store');
+
+Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+Route::get('reports/exports/{export}/download', [ReportExportController::class, 'download'])->name('reports.exports.download');
+Route::get('reports/{report}', [ReportController::class, 'show'])->name('reports.show');
+Route::post('reports/{report}/exports', [ReportExportController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('reports.exports.store');

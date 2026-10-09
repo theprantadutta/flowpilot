@@ -99,6 +99,7 @@ class ActivityPresenter
             'purchase_request.partly_received' => "received part of {$this->workItem($properties, $log)}",
             'purchase_request.received' => "received {$this->workItem($properties, $log)}",
             'purchase_request.cancelled' => "cancelled {$this->workItem($properties, $log)}",
+            'report.exported' => sprintf('exported the %s report (%s)', $this->string($properties, 'report') ?? 'a', $this->string($properties, 'range') ?? 'all dates'),
             'settings.webhook_secret_viewed' => 'revealed the webhook signing secret',
             'settings.webhook_secret_rotated' => 'replaced the webhook signing secret',
             'workflow.created' => "created the workflow {$this->subjectName($log, $properties)}",
@@ -188,6 +189,7 @@ class ActivityPresenter
             'inventory' => 'package',
             'ai' => 'sparkles',
             'file' => 'paperclip',
+            'report' => 'file-down',
             default => 'activity',
         };
     }
