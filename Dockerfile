@@ -7,7 +7,10 @@
 #
 #   docker compose build   (see compose.yml)
 
-ARG PHP_VERSION=8.5
+# An exact patch release, so a rebuild never reuses an older cached 8.5 image.
+# 8.5.12 fixes the remote code execution bugs CVE-2026-109618 and
+# CVE-2026-109619 (PHP security release of 21 Oct 2026).
+ARG PHP_VERSION=8.5.12
 ARG NODE_VERSION=24
 ARG NGINX_VERSION=1.29
 

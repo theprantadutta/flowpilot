@@ -92,7 +92,7 @@ Two versions are pinned on purpose: `typescript` stays on 6.x (vue-tsc needs the
 
 ## Requirements
 
-- PHP 8.5 with `pdo_pgsql`, `pdo_sqlite`, `intl` and `mbstring` (Redis is reached through Predis, so no extension is needed)
+- PHP 8.5.12 or later, with `pdo_pgsql`, `pdo_sqlite`, `intl` and `mbstring` (Redis is reached through Predis, so no extension is needed). Earlier 8.5 releases have the remote code execution bugs CVE-2026-109618 and CVE-2026-109619.
 - Composer 2
 - Node.js 24 and npm
 - PostgreSQL 16
@@ -184,7 +184,7 @@ FlowPilot runs in production at **https://flowpilot.pranta.dev**, behind the sam
 | `worker-long` | The `long` queue: report exports and AI briefs                                        |
 | `scheduler`   | `schedule:work`: resumes waiting workflow runs, reminders, trial checks, pruning      |
 
-The `app` image (PHP 8.5 with OPcache) also runs the workers, the scheduler and migrations. The `web` image is nginx with the compiled frontend. Uploads, exports, logos and avatars live in the `storage` volume, shared by every container.
+The `app` image (PHP 8.5.12 with OPcache) also runs the workers, the scheduler and migrations. The `web` image is nginx with the compiled frontend. Uploads, exports, logos and avatars live in the `storage` volume, shared by every container.
 
 ### What the server needs
 
